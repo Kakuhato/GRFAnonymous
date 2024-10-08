@@ -1,6 +1,6 @@
 import 'package:demo/models/BannerItem.dart';
 import 'package:demo/models/TopicList.dart';
-import 'package:demo/pageRequest/requestUtil.dart';
+import 'package:demo/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -8,28 +8,18 @@ class HomePageRequest with ChangeNotifier {
   List<BannerItem> bannerList = [];
   List<Topic> topicList = [];
   Dio dio = Dio();
-
-  void initDio(){
-    dio.options = BaseOptions(
-      method: "GET",
-      baseUrl: "https://gf2-bbs-api.sunborngame.com/",
-      connectTimeout: Duration(seconds: 30),
-      receiveTimeout: Duration(seconds: 30),
-      sendTimeout: Duration(seconds: 30),
-    );
-  }
+  int hotValue = 0;
+  int lastTid = 0;
+  bool nextPage = true;
+  int pubTime = 0;
+  int replyTime = 0;
+  int total = 0;
+  SortType sortType = SortType.reply;
+  CategoryId categoryId = CategoryId.recommend;
+  QueryType queryType = QueryType.homepage;
 
   Future getBanner() async {
-
-
-    Response response = await dio.get(
-      "/community/banner",
-      // queryParameters: {
-      //   "game_id": 2,
-      //   "platform": 1,
-      //   "version": "1.0.0",
-      // }
-    );
+    Response response = await DioInstance.instance().get(path: "/community/banner");
     if (response.data != null) {
       var list = response.data['data']['banner_list'] as List;
       bannerList = list.map((i) => BannerItem.fromJson(i)).toList();
@@ -42,33 +32,49 @@ class HomePageRequest with ChangeNotifier {
     // return bannerList;
   }
 
-  Future getTopic(
-    SortType sort_type,
-    CategoryId category_id,
-    QueryType query_type, {
+  Future getTopic({
+    SortType sort_type = SortType.reply,
+    CategoryId category_id = CategoryId.recommend,
+    QueryType query_type = QueryType.homepage,
     int last_tid = 0,
     int pub_time = 0,
     int reply_time = 0,
     int hot_value = 0,
+    bool onLoad = false,
   }) async {
     Response response =
-        await dio.get("/community/topic/list", queryParameters: {
-      "sort_type": sort_type.type,
-      "category_id": category_id.type,
-      "query_type": query_type.type,
-      "last_tid": last_tid,
-      "pub_time": pub_time,
-      "reply_time": reply_time,
-      "hot_value": hot_value,
+        await DioInstance.instance().get(path:  "/community/topic/list", param: {
+      "sort_type":  onLoad ? sortType.type : sort_type.type,
+      "category_id": onLoad ? categoryId.type : category_id.type,
+      "query_type": onLoad ? queryType.type : query_type.type,
+      "last_tid": onLoad ? lastTid : last_tid,
+      "pub_time": onLoad ? pubTime : pub_time,
+      "reply_time": onLoad ? replyTime : reply_time,
+      "hot_value": onLoad ? hotValue : hot_value,
     });
     if (response.data != null) {
+      // print(response.requestOptions.queryParameters);
+      // print(response);
       var list = response.data['data']['list'] as List;
-      topicList = list.map((i) => Topic.fromJson(i)).toList();
+
+      hotValue = response.data['data']['hot_value'];
+      lastTid = response.data['data']['last_tid'];
+      nextPage = response.data['data']['next_page'];
+      pubTime = response.data['data']['pub_time'];
+      replyTime = response.data['data']['reply_time'];
+      total = response.data['data']['total'];
+      sortType = sort_type;
+      categoryId = category_id;
+      queryType = query_type;
+      if (!onLoad) {
+        topicList = list.map((i) => Topic.fromJson(i)).toList();
+      } else {
+        topicList.addAll(list.map((i) => Topic.fromJson(i)).toList());
+      }
     } else {
       topicList = [];
     }
 
     notifyListeners();
-
   }
 }

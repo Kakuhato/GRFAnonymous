@@ -3,12 +3,13 @@ import 'dart:math';
 import 'package:demo/models/BannerItem.dart';
 import 'package:demo/models/TopicList.dart';
 import 'package:demo/pageRequest/homeRequest.dart';
-import 'package:demo/pageRequest/requestUtil.dart';
-import 'package:demo/pages/web_view_page.dart';
+import 'package:demo/pageRequest/requestUtils.dart';
+import 'package:demo/pages/webViewPage.dart';
 import 'package:demo/utils/routeUtil.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,68 +28,77 @@ class HomePage extends StatefulWidget {
 //   }
 // }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
   HomePageRequest homePageRequest = HomePageRequest();
 
   @override
   void initState() {
     super.initState();
-    homePageRequest.initDio();
     homePageRequest.getBanner();
-    homePageRequest.getTopic(SortType.reply, CategoryId.recommend, QueryType.homepage);
+    homePageRequest.getTopic();
   }
-
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return ChangeNotifierProvider<HomePageRequest>(
         create: (context) {
           return homePageRequest;
         },
         child: Scaffold(
-          appBar: AppBar(
-            actions: [
-              IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.search,
-                    color: Colors.white,
-                    size: 40,
-                  ))
-            ],
-            title: Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.only(left: 55),
-                child: const Text(
-                  "主  页",
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                )),
-            backgroundColor: Colors.black,
-          ),
-          backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
-          body: SafeArea(
-              child: ListView(
-            children: [
-              _bannerBuilder(),
-              Container(
-                height: 110,
-                width: double.infinity,
-                padding: const EdgeInsets.only(
-                    top: 10, bottom: 10, left: 25, right: 25),
-                margin: const EdgeInsets.only(
-                    top: 5, bottom: 5, left: 10, right: 10),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  // border: Border.all(color: Colors.grey)
-                ),
-                child: _toolBar(), //导航栏
-              ),
-              _topicListBuilder(),
-            ],
-          )),
-        ));
+            appBar: AppBar(
+              actions: [
+                IconButton(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.search,
+                      color: Colors.white,
+                      size: 40,
+                    ))
+              ],
+              title: Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.only(left: 55),
+                  child: const Text(
+                    "主  页",
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  )),
+              backgroundColor: Colors.black,
+            ),
+            backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
+            body: EasyRefresh(
+                // scrollController: ScrollController(keepScrollOffset: false),
+                triggerAxis: Axis.vertical,
+                header: const MaterialHeader(),
+                footer: const CupertinoFooter(),
+                // onRefresh: () async {
+                //   homePageRequest.getTopic(onLoad: false);
+                // },
+                onLoad: () async {
+                  homePageRequest.getTopic(onLoad: true);
+                },
+                child: ListView(
+                  children: [
+                    _bannerBuilder(),
+                    Container(
+                      height: 110,
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(
+                          top: 10, bottom: 10, left: 25, right: 25),
+                      margin: const EdgeInsets.only(
+                          top: 5, bottom: 5, left: 10, right: 10),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                        // border: Border.all(color: Colors.grey)
+                      ),
+                      child: _toolBar(), //导航栏
+                    ),
+                    _topicListBuilder(),
+                  ],
+                ))));
   }
 
   Widget _bannerBuilder() {
@@ -97,9 +107,10 @@ class _HomePageState extends State<HomePage> {
           height: 150,
           width: double.infinity,
           child: Swiper(
-              indicatorLayout: PageIndicatorLayout.NONE,
-              // viewportFraction: 0.8,
+              autoplay: true,
+              viewportFraction: 1,
               loop: false,
+              physics: const BouncingScrollPhysics(),
               pagination: const SwiperPagination(
                   builder: DotSwiperPaginationBuilder(
                       color: Color.fromRGBO(7, 6, 6, 1),
@@ -110,16 +121,16 @@ class _HomePageState extends State<HomePage> {
               itemCount: value.bannerList.length,
               itemBuilder: (context, index) {
                 return Container(
-                  child: Image.network(
-                    value.bannerList[index].imgAddr,
-                    fit: BoxFit.cover,
-                  ),
                   decoration: const BoxDecoration(
                     borderRadius: BorderRadius.all(Radius.circular(10.0)),
                     // color: Colors.blue,
                   ),
                   margin: const EdgeInsets.all(10),
                   height: 150,
+                  child: Image.network(
+                    value.bannerList[index].imgAddr,
+                    fit: BoxFit.cover,
+                  ),
                   // color: Colors.lightBlue,
                 );
               }));
@@ -303,9 +314,26 @@ class _HomePageState extends State<HomePage> {
                     })
                   ],
                 ), // 预览图片
-                Row(
+                Wrap(
                   children: [
                     Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: const Color.fromRGBO(234, 234, 234, 1),
+                      ),
+                      child: Text(
+                        topic.categoryName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color.fromRGBO(163, 163, 187, 1),
+                        ),
+                      ),
+                    ),
+                    ...List.generate(topic.themeInfo.length, (index) {
+                      return Container(
                         margin: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -313,37 +341,19 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(10),
                           color: const Color.fromRGBO(234, 234, 234, 1),
                         ),
-                        child: Row(
-                          children: [
-                            Text(
-                              topic.categoryName,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Color.fromRGBO(163, 163, 187, 1),
-                              ),
-                            ),
-                          ],
-                        )),
-                    ...List.generate(topic.themeInfo.length, (index) {
-                      return Container(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 15),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: const Color.fromRGBO(234, 234, 234, 1),
+                        child: Text(
+                          "#${topic.themeInfo[index].themeName}",
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Color.fromRGBO(163, 163, 187, 1),
                           ),
-                          child: Row(
-                            children: [
-                              Text(
-                                "#${topic.themeInfo[index].themeName}",
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  color: Color.fromRGBO(163, 163, 187, 1),
-                                ),
-                              ),
-                            ],
-                          ));
+                        ),
+                        // Row(
+                        //   children: [
+                        //
+                        //   ],
+                        // )
+                      );
                     }),
                   ],
                 ), // 话题标签
@@ -380,4 +390,8 @@ class _HomePageState extends State<HomePage> {
               ],
             )));
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }

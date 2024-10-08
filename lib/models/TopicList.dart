@@ -88,7 +88,7 @@ class Topic {
     required this.userNickName,
   });
 
-  //用下划线命名json参数
+  //用下划线命名json参数，其中picList可能为空
   factory Topic.fromJson(Map<String, dynamic> json) {
     return Topic(
       categoryId: json['category_id'],
@@ -102,8 +102,10 @@ class Topic {
       isFollow: json['is_follow'],
       isLike: json['is_like'],
       likeNum: json['like_num'],
-      picList: List<String>.from(json['pic_list']),
-      themeInfo: List<ThemeInfo>.from(json['theme_info'].map((x) => ThemeInfo.fromJson(x))),
+      picList:
+          json['pic_list'] != null ? List<String>.from(json['pic_list']) : [],
+      themeInfo: List<ThemeInfo>.from(
+          json['theme_info'].map((x) => ThemeInfo.fromJson(x))),
       title: json['title'],
       topicId: json['topic_id'],
       userAvatar: json['user_avatar'],
@@ -143,7 +145,6 @@ class Topic {
   String toString() {
     return 'ListElement(categoryId: $categoryId, categoryName: $categoryName, commentNum: $commentNum, content: $content, createTime: $createTime, isAdmin: $isAdmin, isAuthor: $isAuthor, isFavor: $isFavor, isFollow: $isFollow, isLike: $isLike, likeNum: $likeNum, picList: $picList, themeInfo: $themeInfo, title: $title, topicId: $topicId, userAvatar: $userAvatar, userId: $userId, userLevel: $userLevel, userNickName: $userNickName)';
   }
-
 }
 
 class ThemeInfo {

@@ -1,8 +1,14 @@
-import 'package:demo/pages/home_page.dart';
+import 'package:demo/pageRequest/requestUtils.dart';
+import 'package:demo/pages/homePage.dart';
 import 'package:demo/utils/routeUtil.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 void main() {
+  // debugRepaintRainbowEnabled = true;
+  DioInstance.instance().initDio(
+    baseUrl: "https://gf2-bbs-api.sunborngame.com/",
+  );
   runApp(const MyApp());
 }
 

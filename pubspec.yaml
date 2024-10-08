@@ -44,6 +44,9 @@ dependencies:
 #  flutter_html: ^2.2.1
   #状态管理
   provider: ^6.1.2
+  # 上拉加载
+  easy_refresh: ^3.4.0
+#  pull_to_refresh_flutter3: ^2.0.2
 
 dev_dependencies:
   flutter_test:
