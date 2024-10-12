@@ -17,6 +17,7 @@ class HomePageRequest with ChangeNotifier {
   SortType sortType = SortType.reply;
   CategoryId categoryId = CategoryId.recommend;
   QueryType queryType = QueryType.homepage;
+  bool _isLoading = false;
 
   Future getBanner() async {
     Response response = await DioInstance.instance().get(path: "/community/banner");
@@ -42,6 +43,10 @@ class HomePageRequest with ChangeNotifier {
     int hot_value = 0,
     bool onLoad = false,
   }) async {
+    if (_isLoading) {
+      return;
+    }
+    _isLoading = true;
     Response response =
         await DioInstance.instance().get(path:  "/community/topic/list", param: {
       "sort_type":  onLoad ? sortType.type : sort_type.type,
@@ -74,7 +79,7 @@ class HomePageRequest with ChangeNotifier {
     } else {
       topicList = [];
     }
-
+    _isLoading = false;
     notifyListeners();
   }
 }

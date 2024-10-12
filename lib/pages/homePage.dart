@@ -1,9 +1,5 @@
-import 'dart:math';
-
-import 'package:demo/models/BannerItem.dart';
 import 'package:demo/models/TopicList.dart';
 import 'package:demo/pageRequest/homeRequest.dart';
-import 'package:demo/pageRequest/requestUtils.dart';
 import 'package:demo/pages/webViewPage.dart';
 import 'package:demo/utils/routeUtil.dart';
 import 'package:flutter/material.dart';
@@ -202,7 +198,8 @@ class _HomePageState extends State<HomePage>
     return Consumer<HomePageRequest>(builder: (context, value, child) {
       return ListView.builder(
           itemBuilder: (context, index) {
-            return _topicBuilder(value.topicList[index]);
+            return RepaintBoundary(child: _topicBuilder(value.topicList[index]),)
+              ;
           },
           // itemCount: 3,
           itemCount: value.topicList.length,
@@ -289,7 +286,7 @@ class _HomePageState extends State<HomePage>
                       fontSize: 15,
                       color: Color.fromRGBO(153, 156, 159, 1),
                     ),
-                    overflow: TextOverflow.ellipsis), // 内容
+                    overflow: TextOverflow.ellipsis,), // 内容
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
@@ -392,6 +389,5 @@ class _HomePageState extends State<HomePage>
   }
 
   @override
-  // TODO: implement wantKeepAlive
   bool get wantKeepAlive => true;
 }

@@ -1,22 +1,26 @@
 import 'package:demo/pages/homePage.dart';
+import 'package:demo/pages/loginPage.dart';
+import 'package:demo/pages/tabPage.dart';
 import 'package:demo/pages/webViewPage.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
-  static Route<dynamic> generateRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case RoutePath.home:
-        return pageRoute(const HomePage());
-      case RoutePath.webViewPage:
-        return pageRoute(const WebViewPage(title: "12"));
-    }
-    return pageRoute(Scaffold(
-      body: SafeArea(
-          child: Center(
-        child: Text("路由：${settings.name} 不存在 "),
-      )),
-    ));
-  }
+  // static Route<dynamic> generateRoute(RouteSettings settings) {
+  //   switch (settings.name) {
+  //     case RoutePath.tab:
+  //       return pageRoute(TabPage());
+  //     case RoutePath.webViewPage:
+  //       return pageRoute(const WebViewPage(title: "12"));
+  //     case RoutePath.loginPage:
+  //       return pageRoute(const LoginPage(),settings: settings);
+  //   }
+  //   return pageRoute(Scaffold(
+  //     body: SafeArea(
+  //         child: Center(
+  //       child: Text("路由：${settings.name} 不存在 "),
+  //     )),
+  //   ));
+  // }
 
   static MaterialPageRoute pageRoute(Widget page,
       {RouteSettings? settings,
@@ -35,10 +39,11 @@ class Routes {
 }
 
 //路由地址
-class RoutePath {
-  static const String home = "/";
-  static const String webViewPage = "/web_view_page";
-}
+// class RoutePath {
+//   static const String tab = "/";
+//   static const String webViewPage = "/web_view_page";
+//   static const String loginPage = "/login_page";
+// }
 
 class RouteUtils {
   RouteUtils._();

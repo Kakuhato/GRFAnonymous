@@ -48,6 +48,7 @@ dependencies:
   easy_refresh: ^3.4.0
 #  pull_to_refresh_flutter3: ^2.0.2
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -72,6 +73,7 @@ flutter:
 
   assets:
     - assets/
+    - assets/barItem/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
