@@ -47,4 +47,22 @@ class LoginRequest with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> getMsg() async {
+    Response response = await DioInstance.instance().post(
+      path: "/login/send_msg",
+      data: {
+        "account_name": username,
+        "graph_code": "",
+      },
+    );
+    var code = response.data['Code'];
+    if (code == 0) {
+      showToast(response.data['Message'].toString());
+      return true;
+    } else {
+      showToast(response.data['Message'].toString());
+      return false;
+    }
+  }
 }

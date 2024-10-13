@@ -76,12 +76,12 @@ class _LoginPageState extends State<LoginPage> {
           SizedBox(height: 10),
           ElevatedButton(
               style: ButtonStyle(
-                backgroundColor:
-                    WidgetStateProperty.all(Colors.lightBlueAccent),
+                backgroundColor: WidgetStateProperty.all(
+                    const Color.fromRGBO(241, 108, 28, 1)),
               ),
               onPressed: () {
-                loginRequest.passWordLogin().then((value){
-                  if(value){
+                loginRequest.passWordLogin().then((value) {
+                  if (value) {
                     RouteUtils.pushAndRemove(context, TabPage());
                   }
                 });
@@ -89,7 +89,10 @@ class _LoginPageState extends State<LoginPage> {
               child: const Center(
                 child: Text(
                   '登录',
-                  style: TextStyle(color: Colors.black),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               )),
         ],
@@ -117,9 +120,12 @@ class _LoginPageState extends State<LoginPage> {
               style: ButtonStyle(
                 shape: WidgetStateProperty.all(RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(5))),
-                backgroundColor: WidgetStateProperty.all(Colors.blueAccent),
+                backgroundColor: WidgetStateProperty.all(
+                    const Color.fromRGBO(48, 122, 152, 1)),
               ),
-              onPressed: () {},
+              onPressed: () {
+                loginRequest.getMsg();
+              },
               child: const Center(
                 child: Text(
                   '获取验证码',
@@ -132,15 +138,23 @@ class _LoginPageState extends State<LoginPage> {
         SizedBox(height: 10),
         ElevatedButton(
             style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(Colors.lightBlueAccent),
+              backgroundColor: WidgetStateProperty.all(
+                  const Color.fromRGBO(241, 108, 28, 1)),
             ),
             onPressed: () {
-              loginRequest.msgCodeLogin();
+              loginRequest.msgCodeLogin().then((value) {
+                if (value) {
+                  RouteUtils.pushAndRemove(context, TabPage());
+                }
+              });
             },
             child: const Center(
               child: Text(
                 '登录',
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             )),
       ],

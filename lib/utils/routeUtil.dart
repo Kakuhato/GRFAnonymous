@@ -73,6 +73,4 @@ class RouteUtils {
       (route) => false,
     );
   }
-
 }
-
