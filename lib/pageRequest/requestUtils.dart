@@ -103,10 +103,12 @@ class DioInstance {
     Map<String, dynamic>? param,
     Options? options,
     CancelToken? cancelToken,
+    dynamic data,
   }) async {
     return _dio.post(
       path,
-      data: param,
+      data: data,
+      queryParameters: param,
       options: options ?? Options(
         method: HttpMethod.POST,
         receiveTimeout: _defaultTimeout,

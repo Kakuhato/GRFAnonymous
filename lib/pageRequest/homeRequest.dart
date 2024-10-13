@@ -1,10 +1,9 @@
-import 'package:demo/models/BannerItem.dart';
-import 'package:demo/models/TopicList.dart';
+import 'package:demo/models/bannerItem.dart';
+import 'package:demo/models/topicList.dart';
 import 'package:demo/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 
-class HomePageRequest with ChangeNotifier {
+class HomePageRequest {
   List<BannerItem> bannerList = [];
   List<Topic> topicList = [];
   Dio dio = Dio();
@@ -20,16 +19,14 @@ class HomePageRequest with ChangeNotifier {
   bool _isLoading = false;
 
   Future getBanner() async {
-    Response response = await DioInstance.instance().get(path: "/community/banner");
+    Response response =
+        await DioInstance.instance().get(path: "/community/banner");
     if (response.data != null) {
       var list = response.data['data']['banner_list'] as List;
       bannerList = list.map((i) => BannerItem.fromJson(i)).toList();
     } else {
       bannerList = [];
     }
-
-    notifyListeners();
-
     // return bannerList;
   }
 
@@ -43,13 +40,11 @@ class HomePageRequest with ChangeNotifier {
     int hot_value = 0,
     bool onLoad = false,
   }) async {
-    if (_isLoading) {
-      return;
-    }
+    if (_isLoading) return;
     _isLoading = true;
     Response response =
-        await DioInstance.instance().get(path:  "/community/topic/list", param: {
-      "sort_type":  onLoad ? sortType.type : sort_type.type,
+        await DioInstance.instance().get(path: "/community/topic/list", param: {
+      "sort_type": onLoad ? sortType.type : sort_type.type,
       "category_id": onLoad ? categoryId.type : category_id.type,
       "query_type": onLoad ? queryType.type : query_type.type,
       "last_tid": onLoad ? lastTid : last_tid,
@@ -80,6 +75,5 @@ class HomePageRequest with ChangeNotifier {
       topicList = [];
     }
     _isLoading = false;
-    notifyListeners();
   }
 }

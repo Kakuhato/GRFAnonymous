@@ -1,6 +1,8 @@
+import 'package:demo/pageRequest/loginRequest.dart';
 import 'package:demo/pages/tabPage.dart';
 import 'package:demo/utils/routeUtil.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,69 +12,105 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  LoginRequest loginRequest = LoginRequest();
+
   bool _isPasswordLogin = true;
   String input = '';
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color.fromRGBO(244, 244, 244, 1),
-      body: Container(
-          margin: EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _isPasswordLogin
-                  ? _buildPasswordLoginForm()
-                  : _buildVerificationCodeLoginForm(),
-              SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isPasswordLogin = !_isPasswordLogin;
-                  });
-                },
-                child: Text(_isPasswordLogin ? '验证码登录' : '账号密码登录',
-                    style: TextStyle(color: Colors.black)),
-              )
-            ],
-          )),
+    return ChangeNotifierProvider(
+      create: (context) => loginRequest,
+      child: Scaffold(
+        backgroundColor: Color.fromRGBO(244, 244, 244, 1),
+        body: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: NetworkImage(
+                  "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbspc1727171270263/img/all-bg.ce70261e.png"),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20)
+                  .add(const EdgeInsets.only(top: 100)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Image.network(
+                      "https://i0.hdslb.com/bfs/new_dyn/bc18c57775319c311d7059213c137393697654195.jpg"),
+                  SizedBox(height: 50),
+                  _isPasswordLogin
+                      ? _buildPasswordLoginForm()
+                      : _buildVerificationCodeLoginForm(),
+                  SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordLogin = !_isPasswordLogin;
+                      });
+                    },
+                    child: Text(_isPasswordLogin ? '验证码登录' : '账号密码登录',
+                        style: const TextStyle(color: Colors.grey)),
+                  ),
+                  const Spacer(),
+                ],
+              )),
+        ),
+      ),
     );
   }
 
   Widget _buildPasswordLoginForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _InputField("请输入散爆账号"),
-        const SizedBox(height: 20),
-        _InputField("请输入密码"),
-        SizedBox(height: 10),
-        ElevatedButton(
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(Colors.lightBlueAccent),
-            ),
-            onPressed: () {},
-            child: Center(
-              child: Text(
-                '登录',
-                style: TextStyle(color: Colors.black),
+    return Consumer<LoginRequest>(builder: (context, loginRequest, child) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _inputField("请输入散爆账号", (value) {
+            loginRequest.username = value;
+          }),
+          const SizedBox(height: 20),
+          _inputField("请输入密码", obscure: true, (value) {
+            loginRequest.password = value;
+          }),
+          SizedBox(height: 10),
+          ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor:
+                    WidgetStateProperty.all(Colors.lightBlueAccent),
               ),
-            )),
-      ],
-    );
+              onPressed: () {
+                loginRequest.passWordLogin().then((value){
+                  if(value){
+                    RouteUtils.pushAndRemove(context, TabPage());
+                  }
+                });
+              },
+              child: const Center(
+                child: Text(
+                  '登录',
+                  style: TextStyle(color: Colors.black),
+                ),
+              )),
+        ],
+      );
+    });
   }
 
   Widget _buildVerificationCodeLoginForm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _InputField("请输入手机号"),
+        _inputField("请输入手机号", (value) {
+          loginRequest.username = value;
+        }),
         const SizedBox(height: 20),
         Row(
           children: [
             Expanded(
-              child: _InputField("请输入短信验证码"),
+              child: _inputField("请输入短信验证码", (value) {
+                loginRequest.msgCode = value;
+              }),
             ),
             SizedBox(width: 10),
             ElevatedButton(
@@ -82,7 +120,7 @@ class _LoginPageState extends State<LoginPage> {
                 backgroundColor: WidgetStateProperty.all(Colors.blueAccent),
               ),
               onPressed: () {},
-              child: Center(
+              child: const Center(
                 child: Text(
                   '获取验证码',
                   style: TextStyle(color: Colors.white),
@@ -96,8 +134,10 @@ class _LoginPageState extends State<LoginPage> {
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.lightBlueAccent),
             ),
-            onPressed: () {},
-            child: Center(
+            onPressed: () {
+              loginRequest.msgCodeLogin();
+            },
+            child: const Center(
               child: Text(
                 '登录',
                 style: TextStyle(color: Colors.black),
@@ -107,18 +147,22 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _InputField(String labelText) {
+  Widget _inputField(
+    String labelText,
+    ValueChanged<String> onChanged, {
+    bool obscure = false,
+  }) {
     return TextField(
-      onChanged: (value) {
-        input = value;
-      },
-      cursorColor: Colors.black,
+      obscureText: obscure,
+      onChanged: onChanged,
+      style: const TextStyle(color: Colors.white),
+      cursorColor: Colors.white,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: const TextStyle(color: Colors.black),
+        labelStyle: const TextStyle(color: Colors.grey),
         focusColor: Colors.red,
         enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black),
+          borderSide: BorderSide(color: Colors.white30),
         ),
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.lightBlueAccent),

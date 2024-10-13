@@ -10,7 +10,7 @@ class TabPage extends StatefulWidget {
   State createState() => _TabPageState();
 }
 
-class _TabPageState extends State<TabPage> {
+class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin{
   late List<Widget> pages;
   late List<String> titles;
   late List<Widget> icons;
@@ -134,6 +134,10 @@ class _TabPageState extends State<TabPage> {
     //       ),
     //     ));
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 
   // List<BottomNavigationBarItem> _barItemList() {
   //   double iconSize = 35;

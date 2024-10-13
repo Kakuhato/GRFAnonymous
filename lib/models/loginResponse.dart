@@ -1,28 +1,28 @@
 ///LoginResponse
 class LoginResponse {
-  int code;
+  int Code;
   Data data;
-  String message;
+  String Message;
 
   LoginResponse({
-    required this.code,
+    required this.Code,
     required this.data,
-    required this.message,
+    required this.Message,
   });
 
   Future<LoginResponse> fromJson(Map<String, dynamic> json) async {
     return LoginResponse(
-      code: json['code'],
+      Code: json['Code'],
       data: Data.fromJson(json['data']),
-      message: json['message'],
+      Message: json['Message'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'code': code,
+      'Code': Code,
       'data': data.toJson(),
-      'message': message,
+      'Message': Message,
     };
   }
 }
