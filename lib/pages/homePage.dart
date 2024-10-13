@@ -30,6 +30,12 @@ class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
   HomePageRequest homePageRequest = HomePageRequest();
 
+  @override
+  void initState() {
+    refreshData();
+    super.initState();
+  }
+
   Future<IndicatorResult> refreshData() async {
     await homePageRequest.getBanner();
     await homePageRequest.getTopic();
@@ -75,9 +81,9 @@ class _HomePageState extends State<HomePage>
         header: const MaterialHeader(),
         // footer: const CupertinoFooter(),
         refreshOnStart: true,
-        onRefresh: () async {
-          return await refreshData();
-        },
+        // onRefresh: () async {
+        //   return await refreshData();
+        // },
         onLoad: () async {
           return await loadData();
         },
