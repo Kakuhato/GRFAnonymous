@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:demo/models/topicList.dart';
 import 'package:demo/pageRequest/homeRequest.dart';
+import 'package:demo/pageRequest/likeAndFollow.dart';
 import 'package:demo/pages/webViewPage.dart';
 import 'package:demo/utils/routeUtil.dart';
 import 'package:flutter/material.dart';
@@ -26,9 +27,9 @@ class HomePage extends StatefulWidget {
 //   }
 // }
 
-class _HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage> {
   HomePageRequest homePageRequest = HomePageRequest();
+  LikeAndFollow likeAndFollow = LikeAndFollow();
 
   @override
   void initState() {
@@ -39,6 +40,7 @@ class _HomePageState extends State<HomePage>
   Future<IndicatorResult> refreshData() async {
     await homePageRequest.getBanner();
     await homePageRequest.getTopic();
+    await likeAndFollow.getSignInStatus();
     setState(() {});
     return IndicatorResult.success;
   }
@@ -51,7 +53,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
+    // super.build(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -81,9 +83,9 @@ class _HomePageState extends State<HomePage>
         header: const MaterialHeader(),
         // footer: const CupertinoFooter(),
         refreshOnStart: true,
-        // onRefresh: () async {
-        //   return await refreshData();
-        // },
+        onRefresh: () async {
+          return await refreshData();
+        },
         onLoad: () async {
           return await loadData();
         },
@@ -158,9 +160,17 @@ class _HomePageState extends State<HomePage>
             children: [
               Stack(
                 children: [
-                  Image.asset(
-                    "assets/sign-in.png",
-                    height: 62,
+                  GestureDetector(
+                    onTap: () async {
+                      likeAndFollow.isSignIn = await likeAndFollow.doSignIn();
+                      setState(() {});
+                    },
+                    child: Image.asset(
+                      likeAndFollow.isSignIn
+                          ? "assets/sign-in-ed.png"
+                          : "assets/sign-in.png",
+                      height: 62,
+                    ),
                   ),
                   Positioned(
                       top: 0,
@@ -168,8 +178,12 @@ class _HomePageState extends State<HomePage>
                       child: Container(
                         width: 10,
                         height: 10,
-                        decoration: const BoxDecoration(
-                            color: Colors.red, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: likeAndFollow.isSignIn
+                              ? const Color.fromRGBO(244, 67, 54, 0)
+                              : Colors.red,
+                          shape: BoxShape.circle,
+                        ),
                       ))
                 ],
               ),
@@ -226,8 +240,8 @@ class _HomePageState extends State<HomePage>
       onTap: () {
         RouteUtils.push(
           context,
-          const WebViewPage(
-            title: "2132",
+          WebViewPage(
+            topicId: topic.topicId.toString(),
           ),
         );
       },
@@ -378,9 +392,26 @@ class _HomePageState extends State<HomePage>
                 const SizedBox(
                   width: 10,
                 ),
-                Image.asset(
-                  "assets/likes.png",
-                  width: 23,
+                GestureDetector(
+                  onTap: () async {
+                    bool result =
+                        await likeAndFollow.like(topic.topicId.toString());
+                    if (result) {
+                      setState(() {
+                        topic.isLike = !topic.isLike;
+                        if (topic.isLike) {
+                          topic.likeNum++;
+                        } else {
+                          topic.likeNum--;
+                        }
+                      });
+                      showToast(topic.isLike ? "点赞成功" : "取消点赞");
+                    }
+                  },
+                  child: Image.asset(
+                    topic.isLike ? "assets/liked.png" : "assets/likes.png",
+                    width: 23,
+                  ),
                 ),
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 5),
@@ -396,7 +427,4 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

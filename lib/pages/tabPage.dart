@@ -85,6 +85,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin{
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return NavigationBarWidget(
       pages: pages,
       titles: titles,

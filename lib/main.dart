@@ -1,26 +1,38 @@
+import 'package:demo/pageRequest/cookieInterceptor.dart';
+import 'package:demo/pageRequest/loginRequest.dart';
 import 'package:demo/pageRequest/requestUtils.dart';
 import 'package:demo/pages/homePage.dart';
 import 'package:demo/pages/loginPage.dart';
 import 'package:demo/pages/tabPage.dart';
-import 'package:demo/pages/test.dart';
-import 'package:demo/utils/routeUtil.dart';
+import 'package:demo/utils/hivUtil.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:hive/hive.dart';
 import 'package:oktoast/oktoast.dart';
 
-void main() {
+Future<void> main() async {
   // debugRepaintRainbowEnabled = true;
+  WidgetsFlutterBinding.ensureInitialized();
+  // await Hive.init(path)
+  await HiveUtil.instance().init();
+  await CookieInterceptor.init();
   DioInstance.instance().initDio(
     baseUrl: "https://gf2-bbs-api.sunborngame.com/",
   );
-  WidgetsFlutterBinding.ensureInitialized();
   imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
-  runApp(const MyApp());
+  var page;
+  if(await LoginRequest.isLogin()){
+    page=TabPage();
+  }else{
+    page=const LoginPage();
+  }
+  runApp(MyApp(page: page));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.page});
+
+  final Widget page;
 
   // This widget is the root of your application.
   @override
@@ -30,14 +42,12 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
         theme: ThemeData(
-
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
           useMaterial3: true,
         ),
         // onGenerateRoute: Routes.generateRoute,
         // initialRoute: RoutePath.tab,
-        home: const LoginPage(),
-        // home: LoginScreen(),
+        home: page,
       ),
     );
   }

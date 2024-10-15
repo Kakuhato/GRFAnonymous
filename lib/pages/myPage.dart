@@ -1,5 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:demo/pageRequest/loginRequest.dart';
+import 'package:demo/pageRequest/myPageRequest.dart';
+import 'package:demo/pages/loginPage.dart';
+import 'package:demo/ui/bottomSheet.dart';
+import 'package:demo/utils/routeUtil.dart';
 import 'package:easy_refresh/easy_refresh.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class MyPage extends StatefulWidget {
@@ -10,13 +15,60 @@ class MyPage extends StatefulWidget {
 }
 
 class _MyPageState extends State<MyPage> {
+  MyPageRequest myPageRequest = MyPageRequest();
+
+  @override
+  void initState() {
+    _refresh();
+    super.initState();
+  }
+
+  Future<void> _refresh() async {
+    await myPageRequest.getUserData();
+    await myPageRequest.getGameData();
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         actions: [
           IconButton(
-              onPressed: () {},
+              onPressed: () {
+                BottomSheetBuilder.showBottomSheet(
+                  context,
+                  backgroundColor: Colors.black,
+                  (_) => Column(
+                    children: [
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          borderRadius:
+                              BorderRadius.all(Radius.circular(10)),
+                        ),
+                        child: ListTile(
+                          // leading: const Icon(Icons.settings),
+                          title: const Text(
+                            "退出登录",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          onTap: () {
+                            RouteUtils.pushAndRemove(
+                                context, const LoginPage());
+                            LoginRequest.exit();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
               icon: const Icon(
                 Icons.settings_outlined,
                 color: Colors.white,
@@ -51,8 +103,9 @@ class _MyPageState extends State<MyPage> {
                     maxHeight: 200,
                     minHeight: 200,
                   ),
-                  child: Image.network(
-                    "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
+                  child: CachedNetworkImage(
+                    imageUrl:
+                        "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -61,8 +114,8 @@ class _MyPageState extends State<MyPage> {
                     top: 120,
                     left: 40,
                     child: ClipOval(
-                      child: Image.network(
-                        "https://community.cdn.sunborngame.com/prod/image/1714297290156.png",
+                      child: CachedNetworkImage(
+                        imageUrl: myPageRequest.userData.avatar,
                         fit: BoxFit.cover,
                         width: 70,
                         height: 70,
@@ -91,41 +144,41 @@ class _MyPageState extends State<MyPage> {
           //用户名 个人资料
           Row(
             children: [
-              const Text(
-                "西门芒果",
-                style: TextStyle(
+              Text(
+                myPageRequest.userData.nickName,
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 20,
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                        color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
-                child: const Text(
-                  "个人资料",
-                  style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
-                ),
-              ),
+              // Container(
+              //   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+              //   decoration: BoxDecoration(
+              //       borderRadius: BorderRadius.circular(30),
+              //       border: Border.all(
+              //           color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
+              //   child: const Text(
+              //     "修改个人资料",
+              //     style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(
             height: 10,
           ),
           //ip属地，社区id
-          const Row(
+          Row(
             children: [
               Text(
-                "ip属地：中国",
-                style: TextStyle(color: Colors.grey),
+                "ip属地：${myPageRequest.userData.ipLocation}",
+                style: const TextStyle(color: Colors.grey),
               ),
-              Spacer(),
+              const Spacer(),
               Text(
-                "社区ID：123456",
-                style: TextStyle(color: Colors.grey),
+                "社区ID：${myPageRequest.userData.uid}",
+                style: const TextStyle(color: Colors.grey),
               ),
             ],
           ),
@@ -146,11 +199,11 @@ class _MyPageState extends State<MyPage> {
         children: [
           Row(
             children: [
-              const Text(
-                "0",
-                style: TextStyle(
+              Text(
+                myPageRequest.userData.fans.toString(),
+                style: const TextStyle(
                   color: Colors.black,
-                  fontSize: 20,
+                  fontSize: 25,
                 ),
               ),
               const Text(
@@ -164,11 +217,11 @@ class _MyPageState extends State<MyPage> {
           const Spacer(),
           Row(
             children: [
-              const Text(
-                "0",
-                style: TextStyle(
+              Text(
+                myPageRequest.userData.follows.toString(),
+                style: const TextStyle(
                   color: Colors.black,
-                  fontSize: 20,
+                  fontSize: 25,
                 ),
               ),
               const Text(
@@ -182,11 +235,11 @@ class _MyPageState extends State<MyPage> {
           const Spacer(),
           Row(
             children: [
-              const Text(
-                "0",
-                style: TextStyle(
+              Text(
+                myPageRequest.userData.likes.toString(),
+                style: const TextStyle(
                   color: Colors.black,
-                  fontSize: 20,
+                  fontSize: 25,
                 ),
               ),
               const Text(
@@ -200,11 +253,11 @@ class _MyPageState extends State<MyPage> {
           const Spacer(),
           Row(
             children: [
-              const Text(
-                "0",
-                style: TextStyle(
+              Text(
+                myPageRequest.userData.favors.toString(),
+                style: const TextStyle(
                   color: Colors.black,
-                  fontSize: 20,
+                  fontSize: 25,
                 ),
               ),
               const Text(
@@ -231,8 +284,9 @@ class _MyPageState extends State<MyPage> {
           ),
           margin: const EdgeInsets.symmetric(horizontal: 15)
               .add(const EdgeInsets.only(top: 20)),
-          child: Image.network(
-              "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png",
+          child: CachedNetworkImage(
+              imageUrl:
+                  "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png",
               fit: BoxFit.cover),
         ),
         Container(
@@ -244,26 +298,26 @@ class _MyPageState extends State<MyPage> {
                 children: [
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Image.network(
-                      "https://community.cdn.sunborngame.com/prod/image/1714297290156.png",
+                    child: CachedNetworkImage(
+                      imageUrl: myPageRequest.gameData.userInfo.avatar,
                       width: 60,
                       height: 60,
                     ),
                   ),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "西门芒果",
-                        style: TextStyle(
+                        myPageRequest.gameData.userInfo.nickName,
+                        style: const TextStyle(
                           color: Color.fromRGBO(181, 143, 97, 1),
                           fontSize: 22,
                           // fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        "60级",
-                        style: TextStyle(
+                        "${myPageRequest.gameData.userInfo.level}级",
+                        style: const TextStyle(
                           color: Color.fromRGBO(181, 143, 97, 1),
                           fontSize: 22,
                           // fontWeight: FontWeight.bold,
@@ -280,16 +334,19 @@ class _MyPageState extends State<MyPage> {
                         .add(const EdgeInsets.only(top: 15)),
                     child: Column(
                       children: [
-                        const Text(
-                          "8-10",
-                          style: TextStyle(
+                        Text(
+                          myPageRequest.gameData.baseInfo.mainStage,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
                           ),
                         ),
                         const Text(
                           "主线进度",
-                          style: TextStyle(color: Colors.white, fontSize: 22),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                          ),
                         ),
                       ],
                     ),
@@ -299,9 +356,9 @@ class _MyPageState extends State<MyPage> {
                         .add(const EdgeInsets.only(top: 15)),
                     child: Column(
                       children: [
-                        const Text(
-                          "26",
-                          style: TextStyle(
+                        Text(
+                          myPageRequest.gameData.baseInfo.heroCount.toString(),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
                           ),
@@ -318,9 +375,10 @@ class _MyPageState extends State<MyPage> {
                         .add(const EdgeInsets.only(top: 15)),
                     child: Column(
                       children: [
-                        const Text(
-                          "414",
-                          style: TextStyle(
+                        Text(
+                          myPageRequest.gameData.baseInfo.achievementCount
+                              .toString(),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
                           ),

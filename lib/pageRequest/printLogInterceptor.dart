@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:demo/utils/hivUtil.dart';
 import 'package:dio/dio.dart';
 
 class PrintLogInterceptor extends InterceptorsWrapper {
@@ -11,6 +12,9 @@ class PrintLogInterceptor extends InterceptorsWrapper {
     log("请求url: ${options.uri}");
     log("请求方法: ${options.method}");
     log("请求参数: ${options.data}");
+    options.headers.addAll({
+      "Authorization": HiveUtil.instance().getString(HiveUtil.tokenKey, defaultValue: ""),
+    });
     super.onRequest(options, handler);
   }
 

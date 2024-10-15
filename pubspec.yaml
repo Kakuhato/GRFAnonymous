@@ -56,6 +56,20 @@ dependencies:
   # 缓存
   cached_network_image: ^3.4.1
 
+  # cookie保存
+  cookie_jar: ^4.0.8
+  dio_cookie_manager: ^3.1.1
+
+  #
+  path_provider: ^2.1.4
+
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  modal_bottom_sheet: ^3.0.0
+
+  flutter_widget_from_html: ^0.15.2
+
 
 dev_dependencies:
   flutter_test:

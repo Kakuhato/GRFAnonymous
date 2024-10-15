@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:demo/pageRequest/cookieInterceptor.dart';
 import 'package:demo/pageRequest/printLogInterceptor.dart';
 import 'package:dio/dio.dart';
 
@@ -59,7 +60,8 @@ class DioInstance {
   final Dio _dio = Dio();
   final _defaultTimeout = const Duration(seconds: 30);
 
-  void initDio({
+
+  Future<void> initDio({
     required String baseUrl,
     String? httpMethod = HttpMethod.GET,
     Duration? connectTimeout,
@@ -67,7 +69,8 @@ class DioInstance {
     Duration? sendTimeout,
     ResponseType? responseType,
     String? contentType,
-  }) {
+  }) async {
+
     _dio.options = BaseOptions(
       method: httpMethod,
       baseUrl: baseUrl,
@@ -77,6 +80,9 @@ class DioInstance {
       responseType: responseType ?? ResponseType.json,
       contentType: contentType,
     );
+    // cookie拦截器
+    _dio.interceptors.add(CookieInterceptor.cookieManager!);
+    //一般拦截器
     _dio.interceptors.add(PrintLogInterceptor());
   }
 
@@ -89,11 +95,12 @@ class DioInstance {
     return _dio.get(
       path,
       queryParameters: param,
-      options: options ?? Options(
-        method: HttpMethod.GET,
-        receiveTimeout: _defaultTimeout,
-        sendTimeout: _defaultTimeout,
-      ),
+      options: options ??
+          Options(
+            method: HttpMethod.GET,
+            receiveTimeout: _defaultTimeout,
+            sendTimeout: _defaultTimeout,
+          ),
       cancelToken: cancelToken,
     );
   }
@@ -109,13 +116,13 @@ class DioInstance {
       path,
       data: data,
       queryParameters: param,
-      options: options ?? Options(
-        method: HttpMethod.POST,
-        receiveTimeout: _defaultTimeout,
-        sendTimeout: _defaultTimeout,
-      ),
+      options: options ??
+          Options(
+            method: HttpMethod.POST,
+            receiveTimeout: _defaultTimeout,
+            sendTimeout: _defaultTimeout,
+          ),
       cancelToken: cancelToken,
     );
   }
-
 }
