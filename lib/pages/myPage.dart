@@ -16,7 +16,7 @@ class MyPage extends StatefulWidget {
 
 class _MyPageState extends State<MyPage> {
   MyPageRequest myPageRequest = MyPageRequest();
-
+  bool _isLoading = true;
   @override
   void initState() {
     _refresh();
@@ -26,7 +26,9 @@ class _MyPageState extends State<MyPage> {
   Future<void> _refresh() async {
     await myPageRequest.getUserData();
     await myPageRequest.getGameData();
-    setState(() {});
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -48,8 +50,7 @@ class _MyPageState extends State<MyPage> {
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         decoration: const BoxDecoration(
                           color: Colors.red,
-                          borderRadius:
-                              BorderRadius.all(Radius.circular(10)),
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
                         ),
                         child: ListTile(
                           // leading: const Icon(Icons.settings),
@@ -86,47 +87,51 @@ class _MyPageState extends State<MyPage> {
         backgroundColor: Colors.black,
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
-      body: EasyRefresh(
-        triggerAxis: Axis.vertical,
-        header: const MaterialHeader(),
-        footer: const CupertinoFooter(),
-        child: ListView(
-          children: [
-            Stack(
-              alignment: Alignment.topCenter,
-              children: [
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  constraints: const BoxConstraints(
-                    // maxWidth: 500,
-                    maxHeight: 200,
-                    minHeight: 200,
-                  ),
-                  child: CachedNetworkImage(
-                    imageUrl:
-                        "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                _profileBuilder(),
-                Positioned(
-                    top: 120,
-                    left: 40,
-                    child: ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: myPageRequest.userData.avatar,
-                        fit: BoxFit.cover,
-                        width: 70,
-                        height: 70,
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : EasyRefresh(
+              triggerAxis: Axis.vertical,
+              header: const MaterialHeader(),
+              footer: const CupertinoFooter(),
+              child: ListView(
+                children: [
+                  Stack(
+                    alignment: Alignment.topCenter,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        constraints: const BoxConstraints(
+                          // maxWidth: 500,
+                          maxHeight: 200,
+                          minHeight: 200,
+                        ),
+                        child: CachedNetworkImage(
+                          imageUrl:
+                              "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    )),
-              ],
+                      _profileBuilder(),
+                      Positioned(
+                          top: 120,
+                          left: 40,
+                          child: ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: myPageRequest.userData.avatar,
+                              fit: BoxFit.cover,
+                              width: 70,
+                              height: 70,
+                            ),
+                          )),
+                    ],
+                  ),
+                  _myCard(),
+                ],
+              ),
             ),
-            _myCard(),
-          ],
-        ),
-      ),
     );
   }
 

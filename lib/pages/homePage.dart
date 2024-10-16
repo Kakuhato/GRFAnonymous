@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> {
         triggerAxis: Axis.vertical,
         header: const MaterialHeader(),
         // footer: const CupertinoFooter(),
-        refreshOnStart: true,
+        // refreshOnStart: true,
         onRefresh: () async {
           return await refreshData();
         },

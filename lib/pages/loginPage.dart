@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:demo/pageRequest/loginRequest.dart';
 import 'package:demo/pages/tabPage.dart';
 import 'package:demo/utils/routeUtil.dart';
@@ -26,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
         body: Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(
+              image: CachedNetworkImageProvider(
                   "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbspc1727171270263/img/all-bg.ce70261e.png"),
               fit: BoxFit.cover,
             ),
@@ -37,8 +38,8 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Image.network(
-                      "https://i0.hdslb.com/bfs/new_dyn/bc18c57775319c311d7059213c137393697654195.jpg"),
+                  CachedNetworkImage(
+                      imageUrl: "https://i0.hdslb.com/bfs/new_dyn/bc18c57775319c311d7059213c137393697654195.jpg"),
                   SizedBox(height: 50),
                   _isPasswordLogin
                       ? _buildPasswordLoginForm()
