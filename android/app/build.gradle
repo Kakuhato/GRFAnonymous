@@ -65,11 +65,24 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
+            signingConfig signingConfigs.release
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    applicationVariants.all { variant ->
+        if (variant.buildType.name == "release") {
+            variant.outputs.all { output ->
+                def newApkName = "GRFAnonymous-v${variant.versionName}.apk"
+                outputFileName = newApkName
+            }
+        }
+    }
+
+
 }
 
 flutter {
