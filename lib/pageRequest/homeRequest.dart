@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 class HomePageRequest {
   List<BannerItem> bannerList = [];
   List<Topic> topicList = [];
-  Dio dio = Dio();
+  // Dio dio = Dio();
   int hotValue = 0;
   int lastTid = 0;
   bool nextPage = true;
@@ -57,11 +57,11 @@ class HomePageRequest {
       // print(response);
       var list = response.data['data']['list'] as List;
 
-      hotValue = response.data['data']['hot_value'];
+      hotValue = response.data['data']['hot_value'] ?? 0;
       lastTid = response.data['data']['last_tid'];
       nextPage = response.data['data']['next_page'];
       pubTime = response.data['data']['pub_time'];
-      replyTime = response.data['data']['reply_time'];
+      replyTime = response.data['data']['reply_time'] ?? 0;
       total = response.data['data']['total'];
       sortType = sort_type;
       categoryId = category_id;
