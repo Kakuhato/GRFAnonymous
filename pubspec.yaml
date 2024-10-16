@@ -74,11 +74,11 @@ dependencies:
 
 
 flutter_icons:
-  android: true
+  android: "ic_launcher"
   ios: false
   image_path: "assets/logo.png"
-#  adaptive_icon_background: "#ffffff"
-#  adaptive_icon_foreground: "assets/logo_test.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/logo-.png"
 
 
 dev_dependencies:
