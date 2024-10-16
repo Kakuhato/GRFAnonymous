@@ -1,7 +1,7 @@
-import 'package:demo/pages/homePage.dart';
-import 'package:demo/pages/loginPage.dart';
-import 'package:demo/pages/tabPage.dart';
-import 'package:demo/pages/webViewPage.dart';
+import 'package:grfanonymous/pages/homePage.dart';
+import 'package:grfanonymous/pages/loginPage.dart';
+import 'package:grfanonymous/pages/tabPage.dart';
+import 'package:grfanonymous/pages/webViewPage.dart';
 import 'package:flutter/material.dart';
 
 class Routes {

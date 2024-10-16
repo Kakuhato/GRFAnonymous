@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:demo/pageRequest/cookieInterceptor.dart';
-import 'package:demo/utils/hivUtil.dart';
-import 'package:demo/utils/routeUtil.dart';
+import 'package:grfanonymous/pageRequest/cookieInterceptor.dart';
+import 'package:grfanonymous/utils/hivUtil.dart';
+import 'package:grfanonymous/utils/routeUtil.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:crypto/crypto.dart';
-import 'package:demo/pageRequest/requestUtils.dart';
+import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -27,7 +27,8 @@ class LoginRequest with ChangeNotifier {
     );
     var code = response.data['Code'];
     if (code == 0) {
-      HiveUtil.instance().setString(HiveUtil.tokenKey, response.data['data']['account']['token']);
+      HiveUtil.instance().setString(
+          HiveUtil.tokenKey, response.data['data']['account']['token']);
       return true;
     } else {
       showToast(response.data['Message'].toString());
@@ -45,7 +46,8 @@ class LoginRequest with ChangeNotifier {
     );
     var code = response.data['Code'];
     if (code == 0) {
-      HiveUtil.instance().setString(HiveUtil.tokenKey, response.data['data']['account']['token']);
+      HiveUtil.instance().setString(
+          HiveUtil.tokenKey, response.data['data']['account']['token']);
       return true;
     } else {
       showToast(response.data['Message'].toString());
@@ -74,15 +76,13 @@ class LoginRequest with ChangeNotifier {
   static Future<bool> isLogin() async {
     if (HiveUtil.instance().getString(HiveUtil.tokenKey) == "") {
       return false;
-    }
-    else {
+    } else {
       return true;
     }
   }
 
-   static exit(){
+  static exit() {
     HiveUtil.instance().setString(HiveUtil.tokenKey, "");
     CookieInterceptor.clear();
   }
-
 }

@@ -136,9 +136,12 @@ class GameData {
   factory GameData.fromJson(Map<String, dynamic> json) {
     return GameData(
       baseInfo: BaseInfo.fromJson(json['base_info']),
-      heroList: (json['hero_list'] as List).map((i) => HeroList.fromJson(i)).toList(),
+      heroList:
+          (json['hero_list'] as List).map((i) => HeroList.fromJson(i)).toList(),
       stageInfo: StageInfo.fromJson(json['stage_info']),
-      themeInfo: (json['theme_info'] as List).map((i) => ThemeInfo.fromJson(i)).toList(),
+      themeInfo: (json['theme_info'] as List)
+          .map((i) => ThemeInfo.fromJson(i))
+          .toList(),
       userInfo: UserInfo.fromJson(json['user_info']),
     );
   }
@@ -152,7 +155,6 @@ class GameData {
       'user_info': userInfo.toJson(),
     };
   }
-
 }
 
 class BaseInfo {
@@ -263,7 +265,9 @@ class StageInfo {
       kuobianStage: KuobianStage.fromJson(json['kuobian_stage']),
       towerStage: TowerStage.fromJson(json['tower_stage']),
       weekCommon: WeekCommon.fromJson(json['week_common']),
-      weekSpecial: (json['week_special'] as List).map((i) => WeekSpecial.fromJson(i)).toList(),
+      weekSpecial: (json['week_special'] as List)
+          .map((i) => WeekSpecial.fromJson(i))
+          .toList(),
     );
   }
 
@@ -275,7 +279,6 @@ class StageInfo {
       'week_special': weekSpecial.map((i) => i.toJson()).toList(),
     };
   }
-
 }
 
 class KuobianStage {
@@ -317,7 +320,6 @@ class KuobianStage {
       'stay_stage': stayStage,
     };
   }
-
 }
 
 class TowerStage {
@@ -466,8 +468,6 @@ class ThemeInfo {
       'show_pic': showPic,
     };
   }
-
-
 }
 
 class UserInfo {

@@ -1,16 +1,16 @@
-import 'package:demo/pages/followPage.dart';
-import 'package:demo/pages/homePage.dart';
-import 'package:demo/pages/messagePage.dart';
-import 'package:demo/pages/myPage.dart';
+import 'package:grfanonymous/pages/followPage.dart';
+import 'package:grfanonymous/pages/homePage.dart';
+import 'package:grfanonymous/pages/messagePage.dart';
+import 'package:grfanonymous/pages/myPage.dart';
 import 'package:flutter/material.dart';
-import 'package:demo/ui/navigationBar.dart';
+import 'package:grfanonymous/ui/navigationBar.dart';
 
 class TabPage extends StatefulWidget {
   @override
   State createState() => _TabPageState();
 }
 
-class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin{
+class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   late List<Widget> pages;
   late List<String> titles;
   late List<Widget> icons;

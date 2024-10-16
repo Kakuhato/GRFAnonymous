@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.mango.grf;
 
 import io.flutter.embedding.android.FlutterActivity;
 

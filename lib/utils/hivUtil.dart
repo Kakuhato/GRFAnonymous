@@ -27,6 +27,6 @@ class HiveUtil {
   }
 
   String getString(String key, {String defaultValue = ""}) {
-    return _box.get(key, defaultValue: defaultValue)??defaultValue;
+    return _box.get(key, defaultValue: defaultValue) ?? defaultValue;
   }
 }

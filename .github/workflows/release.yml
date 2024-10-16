@@ -1,0 +1,147 @@
+name: Build & Release
+
+# Trigger on push to master branch or with a tag
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'V*'
+
+# If previous workflow is still running, we push again, we will cancel the previous workflow
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  Build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Android
+            os: ubuntu-latest
+            artifact_name: release-Android
+            artifact_path: build/app/outputs/flutter-apk/*.apk
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      date: ${{ steps.get_version.outputs.date}}
+    runs-on: ${{ matrix.os }}
+    env:
+      FLUTTER_VERSION: 3.24.0
+    steps:
+      # Checkout branch
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Add Android keystore
+      - name: Setup Android keystore
+        if: matrix.target == 'Android'
+        run: |
+          echo "${{ secrets.ENCODED_KEYSTORE }}" | base64 -di > android/app/upload.jks
+          echo "${{ secrets.KEY_PROPERTIES }}" > android/key.properties
+
+      # Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.16.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      # Cache Pod
+      - name: Cache Pod
+        if: matrix.cache_pod_key != null
+        uses: actions/cache@v4
+        with:
+          key: ${{ matrix.cache_pod_key }}
+          path: ${{ matrix.cache_pod_path }}
+          restore-keys: ${{ matrix.cache_key }}-${{ hashFiles(matrix.cache_pod_restore_keys_hash_file)}}
+
+      # Setup JDK
+      - name: Setup JDK 17 (Android)
+        if: matrix.target == 'Android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      # Flutter Pub Get
+      - name: Flutter Pub Get
+        run: |
+          git config --global core.longpaths true
+          flutter doctor -v
+          flutter pub get
+
+      # Get app version
+      - name: Get app version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(head -n 2 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2 | cut -d '+' -f 1)" >> $GITHUB_OUTPUT
+          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      # Build Android .apk
+      - name: Build Android
+        if: matrix.target == 'Android'
+        run: |
+          flutter build apk --release
+          flutter build apk --release --split-per-abi
+          cd build/app/outputs/flutter-apk
+          mv app-release.apk GRFAnonymous-${{ steps.get_version.outputs.version }}-android-universal.apk
+          mv app-arm64-v8a-release.apk GRFAnonymous-${{ steps.get_version.outputs.version }}-android-arm64-v8a.apk
+          mv app-armeabi-v7a-release.apk GRFAnonymous-${{ steps.get_version.outputs.version }}-android-armeabi-v7a.apk
+          mv app-x86_64-release.apk GRFAnonymous-${{ steps.get_version.outputs.version }}-android-x86_64.apk
+
+      # Upload Artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+
+  Publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Publish
+    needs: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get app version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(head -n 2 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2 | cut -d '+' -f 1)" >> $GITHUB_OUTPUT
+      - name: Make tmp dir
+        run: mkdir /tmp/artifacts
+      - name: Download all Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+      - name: List and move all Artifacts
+        run: |
+          mkdir -p /tmp/artifacts/final
+          mv /tmp/artifacts/release-Android/*.apk /tmp/artifacts/final/
+
+          cd /tmp/artifacts/final
+          for file in *; do
+            if [ -f "$file" ]; then
+              sha1sum "$file" | awk '{ print $1 }' > "$file.sha1"
+            fi
+          done
+          ls -R /tmp/artifacts/final
+
+      - name: Upload to release
+        uses: Robert-Stackflow/release-action@master
+        with:
+          tag: ${{ github.ref_name }}
+          allowUpdates: true
+          generateReleaseNotes: true
+          artifacts: /tmp/artifacts/final/*
+          artifactErrorsFailBuild: true
+          replacesArtifacts: true
+          makeLatest: true
+          draft: true
+          updateOnlyUnreleased: true

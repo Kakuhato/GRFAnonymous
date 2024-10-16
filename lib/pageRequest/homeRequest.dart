@@ -1,6 +1,6 @@
-import 'package:demo/models/bannerItem.dart';
-import 'package:demo/models/topicList.dart';
-import 'package:demo/pageRequest/requestUtils.dart';
+import 'package:grfanonymous/models/bannerItem.dart';
+import 'package:grfanonymous/models/topicList.dart';
+import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 
 class HomePageRequest {

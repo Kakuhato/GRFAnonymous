@@ -13,7 +13,7 @@ class MyWidgetFactory extends WidgetFactory {
     bool isEmoji = classList.contains("emoji");
     double? _width, _height;
 
-    if(isEmoji){
+    if (isEmoji) {
       _width = 70;
       _height = 70;
     }

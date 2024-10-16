@@ -57,7 +57,6 @@ class ListElement {
     required this.userNickName,
   });
 
-
   //用下划线命名json参数,其中picList为String列表但可能为null，commentReply也可能为null
   factory ListElement.fromJson(Map<String, dynamic> json) {
     return ListElement(

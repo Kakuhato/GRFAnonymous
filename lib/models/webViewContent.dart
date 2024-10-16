@@ -1,4 +1,3 @@
-
 ///WebViewContent
 class WebViewContent {
   int authorCommentNum;
@@ -82,7 +81,8 @@ class WebViewContent {
       likeNum: json['like_num'],
       likeUserAvatars: List<String>.from(json['like_user_avatars']),
       picList: List<String>.from(json['pic_list']),
-      themeInfo: List<ThemeInfo>.from(json['theme_info'].map((i) => ThemeInfo.fromJson(i))),
+      themeInfo: List<ThemeInfo>.from(
+          json['theme_info'].map((i) => ThemeInfo.fromJson(i))),
       title: json['title'],
       topicId: json['topic_id'],
       updateTime: json['update_time'],
@@ -126,7 +126,6 @@ class WebViewContent {
       'view_num': viewNum,
     };
   }
-
 }
 
 class ThemeInfo {
@@ -151,5 +150,4 @@ class ThemeInfo {
       'name': name,
     };
   }
-
 }

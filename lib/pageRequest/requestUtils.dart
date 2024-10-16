@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:demo/pageRequest/cookieInterceptor.dart';
-import 'package:demo/pageRequest/printLogInterceptor.dart';
+import 'package:grfanonymous/pageRequest/cookieInterceptor.dart';
+import 'package:grfanonymous/pageRequest/printLogInterceptor.dart';
 import 'package:dio/dio.dart';
 
 //筛选条件
@@ -60,7 +60,6 @@ class DioInstance {
   final Dio _dio = Dio();
   final _defaultTimeout = const Duration(seconds: 30);
 
-
   Future<void> initDio({
     required String baseUrl,
     String? httpMethod = HttpMethod.GET,
@@ -70,7 +69,6 @@ class DioInstance {
     ResponseType? responseType,
     String? contentType,
   }) async {
-
     _dio.options = BaseOptions(
       method: httpMethod,
       baseUrl: baseUrl,

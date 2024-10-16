@@ -1,10 +1,10 @@
-import 'package:demo/pageRequest/cookieInterceptor.dart';
-import 'package:demo/pageRequest/loginRequest.dart';
-import 'package:demo/pageRequest/requestUtils.dart';
-import 'package:demo/pages/homePage.dart';
-import 'package:demo/pages/loginPage.dart';
-import 'package:demo/pages/tabPage.dart';
-import 'package:demo/utils/hivUtil.dart';
+import 'package:grfanonymous/pageRequest/cookieInterceptor.dart';
+import 'package:grfanonymous/pageRequest/loginRequest.dart';
+import 'package:grfanonymous/pageRequest/requestUtils.dart';
+import 'package:grfanonymous/pages/homePage.dart';
+import 'package:grfanonymous/pages/loginPage.dart';
+import 'package:grfanonymous/pages/tabPage.dart';
+import 'package:grfanonymous/utils/hivUtil.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:oktoast/oktoast.dart';
@@ -21,10 +21,10 @@ Future<void> main() async {
   imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   var page;
-  if(await LoginRequest.isLogin()){
-    page=TabPage();
-  }else{
-    page=const LoginPage();
+  if (await LoginRequest.isLogin()) {
+    page = TabPage();
+  } else {
+    page = const LoginPage();
   }
   runApp(MyApp(page: page));
 }
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
     return OKToast(
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
+        title: 'GRFAnonymous',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
           useMaterial3: true,
