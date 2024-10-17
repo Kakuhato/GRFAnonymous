@@ -1,16 +1,14 @@
-# demo
+# 《少女前线：追放》社区第三方app
 
-A new Flutter project.
+**！！！注意！这是第三方客户端，使用此软件默认同意官方的[《少女前线2：追放》官方社区用户协议 (sunborngame.com)](https://gf2-cn.cdn.sunborngame.com/website/user_agreement/bbs_user_agreement.html)和**[《少女前线2：追放》官方社区个人信息保护指引 (sunborngame.com)](https://gf2-cn.cdn.sunborngame.com/website/user_agreement/bbs_privacy.html)
 
-## Getting Started
+## 软件功能以及待实现功能
 
-This project is a starting point for a Flutter application.
+- [x] 浏览、点赞、收藏帖子以及评论
+- [x] 社区，每日签到
+- [ ] 查看其他玩家的消息
+- [ ] 查看回复消息
+- [ ] 发帖以及评论
+- [ ] 查找用户和帖子
+- [ ] 关注用户
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.

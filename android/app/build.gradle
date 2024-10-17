@@ -68,19 +68,19 @@ android {
             signingConfig signingConfigs.release
             // Signing with the debug keys for now, so `flutter run --release` works.
             minifyEnabled true
-            shrinkResources false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            shrinkResources true
+//            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
-    applicationVariants.all { variant ->
-        if (variant.buildType.name == "release") {
-            variant.outputs.all { output ->
-                def newApkName = "GRFAnonymous-v${variant.versionName}.apk"
-                outputFileName = newApkName
-            }
-        }
-    }
+//    applicationVariants.all { variant ->
+//        if (variant.buildType.name == "release") {
+//            variant.outputs.all { output ->
+//                def newApkName = "GRFAnonymous-v${variant.versionName}.apk"
+//                outputFileName = newApkName
+//            }
+//        }
+//    }
 
 
 }

@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:oktoast/oktoast.dart';
 
+import '../ui/uiSizeUtil.dart';
+
 class WebViewPage extends StatefulWidget {
   final String topicId;
   const WebViewPage({super.key, required this.topicId});
@@ -43,67 +45,95 @@ class _WebViewPageState extends State<WebViewPage> {
           )
         : Scaffold(
             backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
-            appBar: AppBar(
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    Icons.star,
-                    size: 35,
-                    color: webViewRequest.webViewContent.isFavor
-                        ? const Color.fromRGBO(242, 108, 28, 1)
-                        : Colors.white,
+            appBar: PreferredSize(
+              preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
+              child: AppBar(
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.star,
+                      size: UiSizeUtil.topIconSize,
+                      color: webViewRequest.webViewContent.isFavor
+                          ? const Color.fromRGBO(242, 108, 28, 1)
+                          : Colors.white,
+                    ),
+                    onPressed: () async {
+                      bool result =
+                          await webViewRequest.favorTopic(widget.topicId);
+                      if (result) {
+                        setState(() {
+                          webViewRequest.webViewContent.isFavor =
+                              !webViewRequest.webViewContent.isFavor;
+                          if (webViewRequest.webViewContent.isFavor) {
+                            webViewRequest.webViewContent.favorNum++;
+                          } else {
+                            webViewRequest.webViewContent.favorNum--;
+                          }
+                        });
+                        showToast(webViewRequest.webViewContent.isFavor
+                            ? "收藏成功"
+                            : "取消收藏");
+                      }
+                    },
                   ),
-                  onPressed: () async {
-                    bool result =
-                        await webViewRequest.favorTopic(widget.topicId);
-                    if (result) {
-                      setState(() {
-                        webViewRequest.webViewContent.isFavor =
-                            !webViewRequest.webViewContent.isFavor;
-                        if (webViewRequest.webViewContent.isFavor) {
-                          webViewRequest.webViewContent.favorNum++;
-                        } else {
-                          webViewRequest.webViewContent.favorNum--;
-                        }
-                      });
-                      showToast(webViewRequest.webViewContent.isFavor
-                          ? "收藏成功"
-                          : "取消收藏");
-                    }
-                  },
+                  IconButton(
+                    icon: Icon(
+                      Icons.segment,
+                      size: UiSizeUtil.topIconSize,
+                    ),
+                    onPressed: () {},
+                  )
+                ],
+                backgroundColor: Colors.black,
+                automaticallyImplyLeading: true,
+                iconTheme: IconThemeData(
+                  color: Colors.white,
+                  size: UiSizeUtil.topIconSize,
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.segment,
-                    size: 35,
-                  ),
-                  onPressed: () {},
-                )
-              ],
-              backgroundColor: Colors.black,
-              automaticallyImplyLeading: true,
-              iconTheme: const IconThemeData(color: Colors.white, size: 35),
+              ),
             ),
-            body: NestedScrollView(
-              headerSliverBuilder:
-                  (BuildContext context, bool innerBoxIsScrolled) => [
-                SliverToBoxAdapter(
-                  child: _titleBuilder(),
+            body: EasyRefresh(
+              triggerAxis: Axis.vertical,
+              header: const MaterialHeader(),
+              refreshOnStart: true,
+              onLoad: webViewRequest.hasNext
+                  ? () async {
+                      await webViewRequest.getReplyList(
+                        widget.topicId,
+                        isInit: false,
+                      );
+                      setState(() {});
+                    }
+                  : null,
+              child: SingleChildScrollView(
+                // headerSliverBuilder:
+                //     (BuildContext context, bool innerBoxIsScrolled) => [
+                //   SliverToBoxAdapter(
+                //     child: _titleBuilder(),
+                //   ),
+                //   SliverToBoxAdapter(
+                //     child: _contentBuilder(),
+                //   ),
+                // ],
+                child: Column(
+                  children: [
+                    _titleBuilder(),
+                    _contentBuilder(),
+                    _replyListBuilder(),
+                    if (!webViewRequest.hasNext)
+                      Container(
+                        margin: const EdgeInsets.only(top: 10, bottom: 10),
+                        child: const Text(
+                          "没有更多了",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Color.fromRGBO(150, 151, 153, 1),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                SliverToBoxAdapter(
-                  child: _contentBuilder(),
-                ),
-              ],
-              body: _replyListBuilder(),
-              // EasyRefresh(
-              //   triggerAxis: Axis.vertical,
-              //   header: const MaterialHeader(),
-              //   refreshOnStart: true,
-              //   onLoad: () async {},
-              //   child: Container(
-              //     child: Text("data"),
-              //   ),
-              // ),
+              ),
             ),
           );
   }
@@ -111,10 +141,14 @@ class _WebViewPageState extends State<WebViewPage> {
   Widget _titleBuilder() {
     return Container(
       padding: const EdgeInsets.all(10),
-      margin: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
+      margin: const EdgeInsets.symmetric(horizontal: 10)
+          .add(EdgeInsets.only(top: 10)),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(10),
+          topRight: Radius.circular(10),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,8 +158,8 @@ class _WebViewPageState extends State<WebViewPage> {
               ClipOval(
                   child: CachedNetworkImage(
                 imageUrl: webViewRequest.webViewContent.userAvatar,
-                width: 60,
-                height: 60,
+                width: UiSizeUtil.postAvatarSize,
+                height: UiSizeUtil.postAvatarSize,
               )),
               Container(
                 margin: const EdgeInsets.only(left: 10),
@@ -136,8 +170,8 @@ class _WebViewPageState extends State<WebViewPage> {
                       children: [
                         Text(
                           webViewRequest.webViewContent.userNickName,
-                          style: const TextStyle(
-                            fontSize: 30,
+                          style: TextStyle(
+                            fontSize: UiSizeUtil.postUserNameFontSize,
                           ),
                         ),
                         Container(
@@ -145,12 +179,13 @@ class _WebViewPageState extends State<WebViewPage> {
                             borderRadius: BorderRadius.circular(5),
                             color: const Color.fromRGBO(248, 181, 141, 1),
                           ),
-                          padding: const EdgeInsets.all(5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 2),
                           margin: const EdgeInsets.only(left: 10),
                           child: Text(
                             "lv.${webViewRequest.webViewContent.userLevel}",
-                            style: const TextStyle(
-                              fontSize: 15,
+                            style: TextStyle(
+                              fontSize: UiSizeUtil.levelFontSize,
                               color: Color.fromRGBO(242, 108, 86, 1),
                             ),
                           ),
@@ -159,7 +194,9 @@ class _WebViewPageState extends State<WebViewPage> {
                     ),
                     Text(
                       "${webViewRequest.webViewContent.viewNum}阅读  ${webViewRequest.webViewContent.ipLocation}",
-                      style: const TextStyle(fontSize: 15, color: Colors.grey),
+                      style: TextStyle(
+                          fontSize: UiSizeUtil.postTimeFontSize,
+                          color: Colors.grey),
                     ),
                   ],
                 ),
@@ -170,15 +207,17 @@ class _WebViewPageState extends State<WebViewPage> {
             margin: const EdgeInsets.only(top: 10),
             child: Text(
               webViewRequest.webViewContent.title,
-              style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: UiSizeUtil.postTitleFontSize,
+              ),
             ),
           ),
           Container(
             margin: const EdgeInsets.only(top: 10),
             child: Text(
               "发布于 ${webViewRequest.webViewContent.createTime}",
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: UiSizeUtil.postTimeFontSize,
                 color: Color.fromRGBO(153, 153, 153, 1),
               ),
             ),
@@ -194,9 +233,12 @@ class _WebViewPageState extends State<WebViewPage> {
       margin: const EdgeInsets.symmetric(horizontal: 10).add(
         const EdgeInsets.only(bottom: 10),
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(10),
+        ),
       ),
       child: HtmlWidget(
         webViewRequest.webViewContent.content,
@@ -241,8 +283,8 @@ class _WebViewPageState extends State<WebViewPage> {
           }
           return null;
         },
-        textStyle: const TextStyle(
-          fontSize: 20,
+        textStyle: TextStyle(
+          fontSize: UiSizeUtil.postContentFontSize,
           color: Colors.black,
         ),
       ),
@@ -281,8 +323,8 @@ class _WebViewPageState extends State<WebViewPage> {
               ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: reply.userAvatar, // 替换为实际头像URL
-                  width: 40,
-                  height: 40,
+                  width: UiSizeUtil.postAvatarSize,
+                  height: UiSizeUtil.postAvatarSize,
                   placeholder: (context, url) => CircularProgressIndicator(),
                   errorWidget: (context, url, error) => Icon(Icons.error),
                 ),
@@ -296,8 +338,8 @@ class _WebViewPageState extends State<WebViewPage> {
                     children: [
                       Text(
                         reply.userNickName,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: UiSizeUtil.postUserNameFontSize,
                         ),
                       ),
                       Container(
@@ -310,9 +352,9 @@ class _WebViewPageState extends State<WebViewPage> {
                         ),
                         child: Text(
                           "lv.${reply.userLevel}",
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color.fromRGBO(242, 108, 28, 1),
+                          style: TextStyle(
+                            fontSize: UiSizeUtil.levelFontSize,
+                            color: const Color.fromRGBO(242, 108, 28, 1),
                           ),
                         ),
                       ),
@@ -337,9 +379,9 @@ class _WebViewPageState extends State<WebViewPage> {
                   ),
                   Text(
                     '${reply.floorNum}L   ${reply.createTime} ${reply.ipLocation}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.grey,
-                      fontSize: 12,
+                      fontSize: UiSizeUtil.postTimeFontSize,
                     ),
                   ),
                 ],
@@ -349,7 +391,10 @@ class _WebViewPageState extends State<WebViewPage> {
           const SizedBox(height: 8),
           // 正文内容
           Container(
-            padding: const EdgeInsets.only(left: 45),
+            padding: const EdgeInsets.only(
+              left: 45,
+              bottom: 5,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
@@ -397,8 +442,8 @@ class _WebViewPageState extends State<WebViewPage> {
                 }
                 return null;
               },
-              textStyle: const TextStyle(
-                fontSize: 18,
+              textStyle: TextStyle(
+                fontSize: UiSizeUtil.postContentFontSize,
                 color: Colors.black,
               ),
             ),
@@ -428,22 +473,37 @@ class _WebViewPageState extends State<WebViewPage> {
                     showToast(reply.isLike ? "点赞成功" : "取消点赞");
                   }
                 },
-                child: Image.asset(
-                    reply.isLike ? "assets/liked.png" : "assets/likes.png",
-                    width: 23,
-                    height: 23),
-              ),
-              SizedBox(width: 4),
-              Text(
-                reply.likeNum.toString(),
-                style: TextStyle(fontSize: 17, color: Colors.grey),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      reply.isLike ? "assets/liked.png" : "assets/likes.png",
+                      width: UiSizeUtil.postCommentLikeIconSize,
+                      height: UiSizeUtil.postCommentLikeIconSize,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      reply.likeNum.toString(),
+                      style: TextStyle(
+                        fontSize: UiSizeUtil.postCommentLikeFontSize,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(width: 16),
-              Image.asset("assets/comments.png", width: 23, height: 23),
+              Image.asset(
+                "assets/comments.png",
+                width: UiSizeUtil.postCommentLikeIconSize,
+                height: UiSizeUtil.postCommentLikeIconSize,
+              ),
               SizedBox(width: 4),
               Text(
                 reply.replyNum.toString(),
-                style: TextStyle(fontSize: 17, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: UiSizeUtil.postCommentLikeFontSize,
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
@@ -480,8 +540,8 @@ class _WebViewPageState extends State<WebViewPage> {
             children: [
               Text(
                 reply.userNickName,
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: UiSizeUtil.secondCommentUserNameFontSize,
                   color: Color.fromRGBO(242, 108, 28, 1),
                 ),
               ),
@@ -496,10 +556,10 @@ class _WebViewPageState extends State<WebViewPage> {
                     ),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: const Text(
+                  child: Text(
                     "作者",
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: UiSizeUtil.secondCommentUserNameFontSize,
                       color: Color.fromRGBO(242, 108, 28, 1),
                     ),
                   ),
@@ -507,20 +567,20 @@ class _WebViewPageState extends State<WebViewPage> {
               if (reply.replyTo != null)
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  child: const Text("回复",
+                  child: Text("回复",
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: UiSizeUtil.secondCommentUserNameFontSize,
                       )),
                 ),
               if (reply.replyTo != null)
                 Text(
                   reply.replyTo!,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: UiSizeUtil.secondCommentUserNameFontSize,
                     color: Color.fromRGBO(242, 108, 28, 1),
                   ),
                 ),
-              if (reply.isTopicAuthor != null)
+              if (reply.replyToUid == webViewRequest.webViewContent.userId)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   margin: const EdgeInsets.only(left: 8),
@@ -531,10 +591,10 @@ class _WebViewPageState extends State<WebViewPage> {
                     ),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: const Text(
-                    "楼主",
+                  child: Text(
+                    "作者",
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: UiSizeUtil.secondCommentUserNameFontSize,
                       color: Color.fromRGBO(242, 108, 28, 1),
                     ),
                   ),
@@ -586,8 +646,8 @@ class _WebViewPageState extends State<WebViewPage> {
                 }
                 return null;
               },
-              textStyle: const TextStyle(
-                fontSize: 18,
+              textStyle: TextStyle(
+                fontSize: UiSizeUtil.secondCommentFontSize,
                 color: Colors.black,
               ),
             ),

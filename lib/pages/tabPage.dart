@@ -29,7 +29,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
       '消 息',
       '我 的',
     ];
-    double iconSize = 35;
+    double iconSize = 25;
     icons = [
       Image.asset(
         "assets/barItem/homePageUnSelected.png",

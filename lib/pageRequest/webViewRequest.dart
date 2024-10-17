@@ -9,6 +9,7 @@ class WebViewRequest {
   List<ListElement> replyList = [];
   int _lastId = 0;
   bool _isLoading = false;
+  late bool hasNext;
 
   Future getWebViewContent(String topicId) async {
     Response response = await DioInstance.instance()
@@ -41,6 +42,7 @@ class WebViewRequest {
     );
     if (response.data != null) {
       _lastId = response.data['data']['last_id'];
+      hasNext = response.data['data']['next_page'];
       var list = response.data['data']['list'] as List;
 
       if (!isInit) {

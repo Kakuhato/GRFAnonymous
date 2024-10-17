@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:grfanonymous/ui/uiSizeUtil.dart';
 
 class MyWidgetFactory extends WidgetFactory {
   @override
@@ -14,8 +15,8 @@ class MyWidgetFactory extends WidgetFactory {
     double? _width, _height;
 
     if (isEmoji) {
-      _width = 70;
-      _height = 70;
+      _width = UiSizeUtil.emojiSize;
+      _height = UiSizeUtil.emojiSize;
     }
 
     // 使用 CachedNetworkImage 进行图片缓存

@@ -8,6 +8,7 @@ import 'package:oktoast/oktoast.dart';
 
 import '../models/topicList.dart';
 import '../pageRequest/likeAndFollow.dart';
+import '../ui/uiSizeUtil.dart';
 import '../utils/routeUtil.dart';
 
 class FollowPage extends StatefulWidget {
@@ -42,16 +43,22 @@ class _FollowPageState extends State<FollowPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.only(left: 0),
-            child: const Text(
-              "关  注",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            )),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
+        child: AppBar(
+          backgroundColor: Colors.black,
+          title: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.only(left: 0),
+              child: Text(
+                "关  注",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: UiSizeUtil.headerFontSize,
+                ),
+              )),
+        ),
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
       body: EasyRefresh(
@@ -84,7 +91,7 @@ class _FollowPageState extends State<FollowPage> {
       },
       itemCount: followPageRequest.topicList.length,
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      // physics: const NeverScrollableScrollPhysics(),
     );
   }
 
@@ -111,8 +118,8 @@ class _FollowPageState extends State<FollowPage> {
                 ClipOval(
                     child: CachedNetworkImage(
                   imageUrl: topic.userAvatar,
-                  width: 50,
-                  height: 50,
+                  width: UiSizeUtil.homePageAvatarSize,
+                  height: UiSizeUtil.homePageAvatarSize,
                 )),
                 const SizedBox(
                   width: 15,
@@ -124,40 +131,43 @@ class _FollowPageState extends State<FollowPage> {
                       Text(
                         topic.userNickName,
                         // "作者",
-                        style: TextStyle(fontSize: 20),
+                        style: TextStyle(
+                            fontSize: UiSizeUtil.homePageUserNameFontSize),
                       ),
                     ]),
                     Text(
                       topic.createTime,
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: UiSizeUtil.homePageTimeFontSize),
                     )
                   ],
                 ),
                 Spacer(),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(
-                          color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
-                  child: const Text(
-                    "+ 关注",
-                    style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
-                  ),
-                )
+                // Container(
+                //   padding: EdgeInsets.symmetric(vertical: 2, horizontal: 5),
+                //   decoration: BoxDecoration(
+                //       borderRadius: BorderRadius.circular(3),
+                //       border: Border.all(
+                //           color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
+                //   child: const Text(
+                //     "+ 关注",
+                //     style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
+                //   ),
+                // )
               ],
             ),
             Text(
               topic.title,
-              style: const TextStyle(
-                fontSize: 17,
+              style: TextStyle(
+                fontSize: UiSizeUtil.homePageTitleFontSize,
               ),
               overflow: TextOverflow.ellipsis,
             ), // 标题
             Text(
               topic.content,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: UiSizeUtil.homePageContentFontSize,
                 color: Color.fromRGBO(153, 156, 159, 1),
               ),
               overflow: TextOverflow.ellipsis,
@@ -198,8 +208,8 @@ class _FollowPageState extends State<FollowPage> {
                   ),
                   child: Text(
                     topic.categoryName,
-                    style: const TextStyle(
-                      fontSize: 15,
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.tagFontSize,
                       color: Color.fromRGBO(163, 163, 187, 1),
                     ),
                   ),
@@ -215,8 +225,8 @@ class _FollowPageState extends State<FollowPage> {
                     ),
                     child: Text(
                       "#${topic.themeInfo[index].themeName}",
-                      style: const TextStyle(
-                        fontSize: 15,
+                      style: TextStyle(
+                        fontSize: UiSizeUtil.tagFontSize,
                         color: Color.fromRGBO(163, 163, 187, 1),
                       ),
                     ),
@@ -234,13 +244,16 @@ class _FollowPageState extends State<FollowPage> {
                 const Expanded(child: SizedBox()),
                 Image.asset(
                   "assets/comments.png",
-                  width: 23,
+                  width: UiSizeUtil.likeIconSize,
                 ),
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 5),
                   child: Text(
                     topic.commentNum.toString(),
-                    style: TextStyle(fontSize: 17, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.likeFontSize,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
                 const SizedBox(
@@ -262,16 +275,23 @@ class _FollowPageState extends State<FollowPage> {
                       showToast(topic.isLike ? "点赞成功" : "取消点赞");
                     }
                   },
-                  child: Image.asset(
-                    topic.isLike ? "assets/liked.png" : "assets/likes.png",
-                    width: 23,
-                  ),
-                ),
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
-                  child: Text(
-                    topic.likeNum.toString(),
-                    style: TextStyle(fontSize: 17, color: Colors.grey),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        topic.isLike ? "assets/liked.png" : "assets/likes.png",
+                        width: UiSizeUtil.likeIconSize,
+                      ),
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 5),
+                        child: Text(
+                          topic.likeNum.toString(),
+                          style: TextStyle(
+                            fontSize: UiSizeUtil.likeFontSize,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

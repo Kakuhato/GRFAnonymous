@@ -7,6 +7,8 @@ import 'package:grfanonymous/utils/routeUtil.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 
+import '../ui/uiSizeUtil.dart';
+
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
 
@@ -34,57 +36,63 @@ class _MyPageState extends State<MyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-              onPressed: () {
-                BottomSheetBuilder.showBottomSheet(
-                  context,
-                  backgroundColor: Colors.black,
-                  (_) => Column(
-                    children: [
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
+        child: AppBar(
+          actions: [
+            IconButton(
+                onPressed: () {
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    backgroundColor: Colors.black,
+                    (_) => Column(
+                      children: [
+                        const SizedBox(
+                          height: 20,
                         ),
-                        child: ListTile(
-                          // leading: const Icon(Icons.settings),
-                          title: const Text(
-                            "退出登录",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white),
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
                           ),
-                          onTap: () {
-                            RouteUtils.pushAndRemove(
-                                context, const LoginPage());
-                            LoginRequest.exit();
-                          },
+                          child: ListTile(
+                            // leading: const Icon(Icons.settings),
+                            title: const Text(
+                              "退出登录",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            onTap: () {
+                              RouteUtils.pushAndRemove(
+                                  context, const LoginPage());
+                              LoginRequest.exit();
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              icon: const Icon(
-                Icons.settings_outlined,
-                color: Colors.white,
-                size: 40,
-              ))
-        ],
-        title: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.only(left: 55),
-            child: const Text(
-              "我  的",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            )),
-        backgroundColor: Colors.black,
+                      ],
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.settings_outlined,
+                  color: Colors.white,
+                  size: UiSizeUtil.topIconSize,
+                ))
+          ],
+          title: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.only(left: 45),
+              child: Text(
+                "我  的",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: UiSizeUtil.headerFontSize,
+                ),
+              )),
+          backgroundColor: Colors.black,
+        ),
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
       body: _isLoading
@@ -122,13 +130,13 @@ class _MyPageState extends State<MyPage> {
                             child: CachedNetworkImage(
                               imageUrl: myPageRequest.userData.avatar,
                               fit: BoxFit.cover,
-                              width: 70,
-                              height: 70,
+                              width: UiSizeUtil.userAvatarSize,
+                              height: UiSizeUtil.userAvatarSize,
                             ),
                           )),
                     ],
                   ),
-                  _myCard(),
+                  _gameInfo(),
                 ],
               ),
             ),
@@ -151,9 +159,9 @@ class _MyPageState extends State<MyPage> {
             children: [
               Text(
                 myPageRequest.userData.nickName,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
-                  fontSize: 20,
+                  fontSize: UiSizeUtil.userUserNameFontSize,
                 ),
               ),
               const Spacer(),
@@ -178,12 +186,18 @@ class _MyPageState extends State<MyPage> {
             children: [
               Text(
                 "ip属地：${myPageRequest.userData.ipLocation}",
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: UiSizeUtil.userIdFontSize,
+                ),
               ),
               const Spacer(),
               Text(
                 "社区ID：${myPageRequest.userData.uid}",
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: UiSizeUtil.userIdFontSize,
+                ),
               ),
             ],
           ),
@@ -196,79 +210,81 @@ class _MyPageState extends State<MyPage> {
   Widget _fansAndFollow() {
     return Container(
       margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
       decoration: const BoxDecoration(
         color: Color.fromRGBO(242, 242, 242, 1),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Row(
             children: [
               Text(
                 myPageRequest.userData.fans.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
-                  fontSize: 25,
+                  fontSize: UiSizeUtil.userFansNumFontSize,
                 ),
               ),
-              const Text(
+              Text(
                 "粉丝",
                 style: TextStyle(
                   color: Colors.grey,
+                  fontSize: UiSizeUtil.userFansFontSize,
                 ),
               ),
             ],
           ),
-          const Spacer(),
           Row(
             children: [
               Text(
                 myPageRequest.userData.follows.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
-                  fontSize: 25,
+                  fontSize: UiSizeUtil.userFansNumFontSize,
                 ),
               ),
-              const Text(
+              Text(
                 "关注",
                 style: TextStyle(
                   color: Colors.grey,
+                  fontSize: UiSizeUtil.userFansFontSize,
                 ),
               ),
             ],
           ),
-          const Spacer(),
           Row(
             children: [
               Text(
                 myPageRequest.userData.likes.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
-                  fontSize: 25,
+                  fontSize: UiSizeUtil.userFansNumFontSize,
                 ),
               ),
-              const Text(
+              Text(
                 "获赞",
                 style: TextStyle(
                   color: Colors.grey,
+                  fontSize: UiSizeUtil.userFansFontSize,
                 ),
               ),
             ],
           ),
-          const Spacer(),
           Row(
             children: [
               Text(
                 myPageRequest.userData.favors.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.black,
-                  fontSize: 25,
+                  fontSize: UiSizeUtil.userFansNumFontSize,
                 ),
               ),
-              const Text(
+              Text(
                 "收藏",
                 style: TextStyle(
                   color: Colors.grey,
+                  fontSize: UiSizeUtil.userFansFontSize,
                 ),
               ),
             ],
@@ -280,7 +296,7 @@ class _MyPageState extends State<MyPage> {
 
   Widget _myCard() {
     return Stack(
-      alignment: Alignment.centerLeft,
+      alignment: Alignment.topCenter,
       children: [
         Container(
           constraints: const BoxConstraints(
@@ -398,6 +414,129 @@ class _MyPageState extends State<MyPage> {
                 ],
               )
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _gameInfo() {
+    return Container(
+      constraints: const BoxConstraints(
+        maxWidth: 200,
+        minWidth: 200,
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      child: Center(
+        child: Stack(
+          children: [
+            // 背景图片
+            Container(
+              constraints: const BoxConstraints(
+                maxWidth: 350,
+                // minWidth: 200,
+              ),
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: CachedNetworkImageProvider(
+                      "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png"), // 动态背景图片
+                  fit: BoxFit.fitWidth,
+                ),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(
+                    height: 45,
+                  ),
+                  Container(
+                    // margin: const EdgeInsets.symmetric(vertical: 20),
+                    padding: const EdgeInsets.only(bottom: 20, left: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            // 头像
+                            CachedNetworkImage(
+                              imageUrl: myPageRequest
+                                  .gameData.userInfo.avatar, // 动态头像图片
+                              height: 40,
+                              width: 40,
+                              fit: BoxFit.cover,
+                            ),
+                            const SizedBox(width: 12),
+                            // 用户名和等级
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  myPageRequest.gameData.userInfo.nickName, // 用户名
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: UiSizeUtil.gameInfoCardUserNameFontSize,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  "${myPageRequest.gameData.userInfo.level}级", // 等级
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: UiSizeUtil.gameInfoCardLevelFontSize,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // 主线进度、收集数和里程碑
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildInfoText(
+                                myPageRequest.gameData.baseInfo.mainStage,
+                                "主线进度"),
+                            _buildInfoText(
+                                myPageRequest.gameData.baseInfo.heroCount
+                                    .toString(),
+                                "人形收集"),
+                            _buildInfoText(
+                                myPageRequest.gameData.baseInfo.achievementCount
+                                    .toString(),
+                                "里程碑"),
+                            SizedBox(
+                              width: 80,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoText(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: UiSizeUtil.gameInfoCardUserNameFontSize,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: UiSizeUtil.gameInfoCardLevelFontSize,
           ),
         ),
       ],

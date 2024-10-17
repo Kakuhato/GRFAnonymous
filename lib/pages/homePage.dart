@@ -3,6 +3,7 @@ import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/pageRequest/homeRequest.dart';
 import 'package:grfanonymous/pageRequest/likeAndFollow.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
+import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'package:grfanonymous/utils/routeUtil.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
@@ -55,26 +56,32 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     // super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.only(left: 55),
-            child: const Text(
-              "主  页",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            )),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.search,
-              color: Colors.white,
-              size: 40,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
+        child: AppBar(
+          backgroundColor: Colors.black,
+          title: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.only(left: 45),
+              child: Text(
+                "主  页",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: UiSizeUtil.headerFontSize,
+                ),
+              )),
+          actions: [
+            IconButton(
+              onPressed: () {},
+              icon: Icon(
+                Icons.search,
+                color: Colors.white,
+                size: UiSizeUtil.topIconSize,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
       body: EasyRefresh(
@@ -146,7 +153,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       height: 110,
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 25, right: 25),
+      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 10, right: 10),
       margin: const EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -154,7 +161,7 @@ class _HomePageState extends State<HomePage> {
         // border: Border.all(color: Colors.grey)
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             children: [
@@ -257,8 +264,8 @@ class _HomePageState extends State<HomePage> {
                 ClipOval(
                     child: CachedNetworkImage(
                   imageUrl: topic.userAvatar,
-                  width: 50,
-                  height: 50,
+                  width: UiSizeUtil.homePageAvatarSize,
+                  height: UiSizeUtil.homePageAvatarSize,
                 )),
                 const SizedBox(
                   width: 15,
@@ -270,18 +277,24 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         topic.userNickName,
                         // "作者",
-                        style: TextStyle(fontSize: 20),
+                        style: TextStyle(
+                          fontSize: UiSizeUtil.homePageUserNameFontSize,
+                          // fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ]),
                     Text(
                       topic.createTime,
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: UiSizeUtil.homePageTimeFontSize,
+                      ),
                     )
                   ],
                 ),
                 Spacer(),
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                  padding: EdgeInsets.symmetric(vertical: 2, horizontal: 5),
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(3),
                       border: Border.all(
@@ -295,15 +308,15 @@ class _HomePageState extends State<HomePage> {
             ),
             Text(
               topic.title,
-              style: const TextStyle(
-                fontSize: 17,
+              style: TextStyle(
+                fontSize: UiSizeUtil.homePageTitleFontSize,
               ),
               overflow: TextOverflow.ellipsis,
             ), // 标题
             Text(
               topic.content,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: UiSizeUtil.homePageContentFontSize,
                 color: Color.fromRGBO(153, 156, 159, 1),
               ),
               overflow: TextOverflow.ellipsis,
@@ -344,8 +357,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: Text(
                     topic.categoryName,
-                    style: const TextStyle(
-                      fontSize: 15,
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.tagFontSize,
                       color: Color.fromRGBO(163, 163, 187, 1),
                     ),
                   ),
@@ -361,8 +374,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: Text(
                       "#${topic.themeInfo[index].themeName}",
-                      style: const TextStyle(
-                        fontSize: 15,
+                      style: TextStyle(
+                        fontSize: UiSizeUtil.tagFontSize,
                         color: Color.fromRGBO(163, 163, 187, 1),
                       ),
                     ),
@@ -380,13 +393,16 @@ class _HomePageState extends State<HomePage> {
                 const Expanded(child: SizedBox()),
                 Image.asset(
                   "assets/comments.png",
-                  width: 23,
+                  width: UiSizeUtil.likeIconSize,
                 ),
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 5),
                   child: Text(
                     topic.commentNum.toString(),
-                    style: TextStyle(fontSize: 17, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.likeFontSize,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
                 const SizedBox(
@@ -408,16 +424,23 @@ class _HomePageState extends State<HomePage> {
                       showToast(topic.isLike ? "点赞成功" : "取消点赞");
                     }
                   },
-                  child: Image.asset(
-                    topic.isLike ? "assets/liked.png" : "assets/likes.png",
-                    width: 23,
-                  ),
-                ),
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
-                  child: Text(
-                    topic.likeNum.toString(),
-                    style: TextStyle(fontSize: 17, color: Colors.grey),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        topic.isLike ? "assets/liked.png" : "assets/likes.png",
+                        width: UiSizeUtil.likeIconSize,
+                      ),
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 5),
+                        child: Text(
+                          topic.likeNum.toString(),
+                          style: TextStyle(
+                            fontSize: UiSizeUtil.likeFontSize,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

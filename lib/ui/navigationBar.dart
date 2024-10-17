@@ -26,6 +26,7 @@ class NavigationBarWidget extends StatefulWidget {
 
 class _NavigationBarWidgetState extends State<NavigationBarWidget> {
   int _currentIndex = 0;
+  double _fontSize = 15;
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +49,14 @@ class _NavigationBarWidgetState extends State<NavigationBarWidget> {
           child: BottomNavigationBar(
             backgroundColor: Colors.white,
             type: BottomNavigationBarType.fixed,
-            selectedLabelStyle: const TextStyle(
+            selectedLabelStyle: TextStyle(
               // color: Color.fromRGBO(242, 108, 28, 1),
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontSize: _fontSize,
+              // fontWeight: FontWeight.bold,
             ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+            unselectedLabelStyle: TextStyle(
+              fontSize: _fontSize,
+              // fontWeight: FontWeight.bold,
             ),
             selectedItemColor: const Color.fromRGBO(242, 108, 28, 1),
             currentIndex: _currentIndex ?? 0,
