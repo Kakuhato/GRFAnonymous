@@ -1,12 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:grfanonymous/pageRequest/followPageRequest.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
 import 'package:oktoast/oktoast.dart';
 
 import '../models/topicList.dart';
-import '../pageRequest/homeRequest.dart';
 import '../pageRequest/likeAndFollow.dart';
 import '../utils/routeUtil.dart';
 
@@ -18,7 +18,7 @@ class FollowPage extends StatefulWidget {
 }
 
 class _FollowPageState extends State<FollowPage> {
-  HomePageRequest homePageRequest = HomePageRequest();
+  FollowPageRequest followPageRequest = FollowPageRequest();
   LikeAndFollow likeAndFollow = LikeAndFollow();
 
   @override
@@ -28,17 +28,13 @@ class _FollowPageState extends State<FollowPage> {
   }
 
   Future<IndicatorResult> refreshData() async {
-    await homePageRequest.getTopic(
-      sort_type: SortType.reply,
-      category_id: CategoryId.none,
-      query_type: QueryType.follow,
-    );
+    await followPageRequest.getTopic(onLoad: false);
     setState(() {});
     return IndicatorResult.success;
   }
 
   Future<IndicatorResult> loadData() async {
-    await homePageRequest.getTopic(onLoad: true);
+    await followPageRequest.getTopic(onLoad: true);
     setState(() {});
     return IndicatorResult.success;
   }
@@ -84,9 +80,9 @@ class _FollowPageState extends State<FollowPage> {
   Widget _topicListBuilder() {
     return ListView.builder(
       itemBuilder: (context, index) {
-        return _topicBuilder(homePageRequest.topicList[index]);
+        return _topicBuilder(followPageRequest.topicList[index]);
       },
-      itemCount: homePageRequest.topicList.length,
+      itemCount: followPageRequest.topicList.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
     );

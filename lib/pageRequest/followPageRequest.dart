@@ -3,8 +3,7 @@ import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 
-class HomePageRequest {
-  List<BannerItem> bannerList = [];
+class FollowPageRequest {
   List<Topic> topicList = [];
   // Dio dio = Dio();
   int hotValue = 0;
@@ -14,26 +13,14 @@ class HomePageRequest {
   int replyTime = 0;
   int total = 0;
   SortType sortType = SortType.reply;
-  CategoryId categoryId = CategoryId.recommend;
-  QueryType queryType = QueryType.homepage;
+  CategoryId categoryId = CategoryId.none;
+  QueryType queryType = QueryType.follow;
   bool _isLoading = false;
-
-  Future getBanner() async {
-    Response response =
-        await DioInstance.instance().get(path: "/community/banner");
-    if (response.data != null) {
-      var list = response.data['data']['banner_list'] as List;
-      bannerList = list.map((i) => BannerItem.fromJson(i)).toList();
-    } else {
-      bannerList = [];
-    }
-    // return bannerList;
-  }
 
   Future getTopic({
     SortType sort_type = SortType.reply,
-    CategoryId category_id = CategoryId.recommend,
-    QueryType query_type = QueryType.homepage,
+    CategoryId category_id = CategoryId.none,
+    QueryType query_type = QueryType.follow,
     int last_tid = 0,
     int pub_time = 0,
     int reply_time = 0,
@@ -42,26 +29,36 @@ class HomePageRequest {
   }) async {
     if (_isLoading) return;
     _isLoading = true;
-    Response response =
-        await DioInstance.instance().get(path: "/community/topic/list", param: {
-      "sort_type": onLoad ? sortType.type : sort_type.type,
-      "category_id": onLoad ? categoryId.type : category_id.type,
-      "query_type": onLoad ? queryType.type : query_type.type,
-      "last_tid": onLoad ? lastTid : last_tid,
-      "pub_time": onLoad ? pubTime : pub_time,
-      "reply_time": onLoad ? replyTime : reply_time,
-      "hot_value": onLoad ? hotValue : hot_value,
-    });
+    Response response;
+    if (onLoad == false) {
+      response = await DioInstance.instance()
+          .get(path: "/community/topic/list", param: {
+        "sort_type": sort_type.type,
+        "category_id": category_id.type,
+        "query_type": query_type.type,
+        "last_tid": last_tid,
+        "pub_time": pub_time,
+        "reply_time": reply_time,
+        "hot_value": hot_value,
+      });
+    } else {
+      response = await DioInstance.instance()
+          .get(path: "/community/topic/list", param: {
+        "sort_type":sortType.type,
+        "category_id": categoryId.type,
+        "query_type": queryType.type,
+        "last_tid": lastTid,
+        "pub_time": pubTime,
+      });
+    }
     if (response.data != null) {
       // print(response.requestOptions.queryParameters);
       // print(response);
       var list = response.data['data']['list'] as List;
 
-      hotValue = response.data['data']['hot_value'];
       lastTid = response.data['data']['last_tid'];
       nextPage = response.data['data']['next_page'];
       pubTime = response.data['data']['pub_time'];
-      replyTime = response.data['data']['reply_time'];
       total = response.data['data']['total'];
       sortType = sort_type;
       categoryId = category_id;
