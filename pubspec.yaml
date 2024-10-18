@@ -46,7 +46,7 @@ dependencies:
   provider: ^6.1.2
   # 上拉加载
   easy_refresh: ^3.4.0
-#  pull_to_refresh_flutter3: ^2.0.2
+  #  pull_to_refresh_flutter3: ^2.0.2
   # 加密
   crypto: ^3.0.5
 
@@ -71,6 +71,8 @@ dependencies:
   flutter_widget_from_html: ^0.15.2
 
   flutter_launcher_icons: ^0.13.1
+
+  waterfall_flow: ^3.0.3
 
 
 flutter_icons:

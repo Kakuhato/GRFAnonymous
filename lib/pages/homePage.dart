@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/pageRequest/homeRequest.dart';
 import 'package:grfanonymous/pageRequest/likeAndFollow.dart';
+import 'package:grfanonymous/pages/shopPage.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'package:grfanonymous/utils/routeUtil.dart';
@@ -199,10 +200,16 @@ class _HomePageState extends State<HomePage> {
           ),
           Column(
             children: [
-              Image.asset(
-                "assets/shop.png",
-                height: 62,
-              ),
+              GestureDetector(
+                onTap: () {
+                  RouteUtils.push(context,const ShopPage());
+                },
+                child: Image.asset(
+                  "assets/shop.png",
+                  height: 62,
+                ),
+              )
+              ,
               Text("福利兑换")
             ],
           ),

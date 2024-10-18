@@ -93,4 +93,13 @@ class UiSizeUtil{
   // 游戏信息卡等级字体大小
   static double gameInfoCardLevelFontSize = 14;
 
+  // 商店积分字体
+  static double shopScoreFontSize = 15;
+
+  // 商店物品名称字体大小
+  static double shopItemNameFontSize = 14;
+
+  // 商店限购次数
+  static double shopLimitFontSize = 12;
+
 }

@@ -24,7 +24,7 @@ class _WebViewPageState extends State<WebViewPage> {
   bool isLoading = true;
 
   @override
-  void initState() {
+  initState() {
     initTopic();
     super.initState();
   }
