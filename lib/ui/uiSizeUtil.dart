@@ -28,10 +28,10 @@ class UiSizeUtil{
   static double tagFontSize = 12;
 
   // 评论、点赞图标大小
-  static double likeIconSize = 15;
+  static double likeIconSize = 17;
 
   // 评论、点赞字体大小
-  static double likeFontSize = 15;
+  static double likeFontSize = 17;
 
   // 表情包大小
   static double emojiSize = 55;
@@ -61,10 +61,10 @@ class UiSizeUtil{
   static double postCommentTimeFontSize = 11;
 
   // 帖子评论点赞字体大小
-  static double postCommentLikeFontSize = 15;
+  static double postCommentLikeFontSize = 17;
 
   // 帖子评论点赞图标大小
-  static double postCommentLikeIconSize = 15;
+  static double postCommentLikeIconSize = 17;
 
   // 二级评论用户名字体大小
   static double secondCommentUserNameFontSize = 14;

@@ -48,4 +48,16 @@ class LikeAndFollow {
     }
     return false;
   }
+
+  Future<bool> follow(int userID) async {
+    Response response = await DioInstance.instance()
+        .get(path: "/community/member/follow/$userID");
+    if (response.data["Code"] == 0) {
+      showToast(response.data["Message"]);
+      return true;
+    } else {
+      showToast("操作失败");
+      return false;
+    }
+  }
 }

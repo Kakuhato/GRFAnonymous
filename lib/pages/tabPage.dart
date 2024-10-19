@@ -5,6 +5,8 @@ import 'package:grfanonymous/pages/myPage.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/ui/navigationBar.dart';
 
+import '../utils/globalKey.dart';
+
 class TabPage extends StatefulWidget {
   @override
   State createState() => _TabPageState();
@@ -18,7 +20,9 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
 
   void initTableData() {
     pages = [
-      HomePage(),
+      HomePage(
+        key: homeScaffoldKey,
+      ),
       FollowPage(),
       MessagePage(),
       MyPage(),

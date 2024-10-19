@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:oktoast/oktoast.dart';
 
+import '../pageRequest/likeAndFollow.dart';
 import '../ui/uiSizeUtil.dart';
+import '../utils/globalKey.dart';
 
 class WebViewPage extends StatefulWidget {
   final String topicId;
@@ -20,6 +22,7 @@ class WebViewPage extends StatefulWidget {
 }
 
 class _WebViewPageState extends State<WebViewPage> {
+  LikeAndFollow likeAndFollow = LikeAndFollow();
   WebViewRequest webViewRequest = WebViewRequest();
   bool isLoading = true;
 
@@ -78,10 +81,27 @@ class _WebViewPageState extends State<WebViewPage> {
                   ),
                   IconButton(
                     icon: Icon(
-                      Icons.segment,
+                      color: webViewRequest.webViewContent.isLike
+                          ? const Color.fromRGBO(242, 108, 28, 1)
+                          : Colors.white,
+                      Icons.thumb_up_off_alt,
                       size: UiSizeUtil.topIconSize,
                     ),
-                    onPressed: () {},
+                    onPressed: () async {
+                      bool result = await likeAndFollow.like(widget.topicId);
+                      if (result) {
+                        setState(() {
+                          webViewRequest.webViewContent.isLike =
+                              !webViewRequest.webViewContent.isLike;
+                          homeScaffoldState?.updateLikeState(
+                              int.parse(widget.topicId),
+                              webViewRequest.webViewContent.isLike);
+                        });
+                        showToast(webViewRequest.webViewContent.isLike
+                            ? "点赞成功"
+                            : "取消点赞");
+                      }
+                    },
                   )
                 ],
                 backgroundColor: Colors.black,
@@ -480,29 +500,33 @@ class _WebViewPageState extends State<WebViewPage> {
                       width: UiSizeUtil.postCommentLikeIconSize,
                       height: UiSizeUtil.postCommentLikeIconSize,
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      reply.likeNum.toString(),
-                      style: TextStyle(
-                        fontSize: UiSizeUtil.postCommentLikeFontSize,
-                        color: Colors.grey,
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Text(
+                        reply.likeNum.toString(),
+                        style: TextStyle(
+                          fontSize: UiSizeUtil.postCommentLikeFontSize,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 10),
               Image.asset(
                 "assets/comments.png",
                 width: UiSizeUtil.postCommentLikeIconSize,
                 height: UiSizeUtil.postCommentLikeIconSize,
               ),
-              SizedBox(width: 4),
-              Text(
-                reply.replyNum.toString(),
-                style: TextStyle(
-                  fontSize: UiSizeUtil.postCommentLikeFontSize,
-                  color: Colors.grey,
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                child: Text(
+                  reply.replyNum.toString(),
+                  style: TextStyle(
+                    fontSize: UiSizeUtil.postCommentLikeFontSize,
+                    color: Colors.grey,
+                  ),
                 ),
               ),
             ],
@@ -536,7 +560,7 @@ class _WebViewPageState extends State<WebViewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
             children: [
               Text(
                 reply.userNickName,

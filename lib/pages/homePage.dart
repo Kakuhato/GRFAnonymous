@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/pageRequest/homeRequest.dart';
 import 'package:grfanonymous/pageRequest/likeAndFollow.dart';
@@ -17,7 +18,7 @@ class HomePage extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return _HomePageState();
+    return HomePageState();
   }
 }
 
@@ -29,14 +30,36 @@ class HomePage extends StatefulWidget {
 //   }
 // }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
   HomePageRequest homePageRequest = HomePageRequest();
   LikeAndFollow likeAndFollow = LikeAndFollow();
+  ScrollController _scrollController = ScrollController();
+  bool _isShowTopButton = false;
 
   @override
   void initState() {
     refreshData();
+
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 150 && !_isShowTopButton) {
+        setState(() {
+          _isShowTopButton = true;
+        });
+      } else if (_scrollController.offset <= 150 && _isShowTopButton) {
+        // 当页面回到顶部，隐藏按钮
+        setState(() {
+          _isShowTopButton = false;
+        });
+      }
+    });
+
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<IndicatorResult> refreshData() async {
@@ -85,30 +108,62 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
-      body: EasyRefresh(
-        // scrollController: ScrollController(keepScrollOffset: false),
-        triggerAxis: Axis.vertical,
-        header: const MaterialHeader(),
-        // footer: const CupertinoFooter(),
-        // refreshOnStart: true,
-        onRefresh: () async {
-          return await refreshData();
-        },
-        onLoad: () async {
-          return await loadData();
-        },
-        child: NestedScrollView(
-          headerSliverBuilder:
-              (BuildContext context, bool innerBoxIsScrolled) => [
-            SliverToBoxAdapter(
-              child: _bannerBuilder(),
+      body: Stack(
+        children: [
+          EasyRefresh(
+            // scrollController: _scrollController,
+            // scrollController: ScrollController(keepScrollOffset: false),
+            triggerAxis: Axis.vertical,
+            header: const MaterialHeader(),
+            // footer: const CupertinoFooter(),
+            // refreshOnStart: true,
+            onRefresh: () async {
+              return await refreshData();
+            },
+            onLoad: () async {
+              return await loadData();
+            },
+            child: NestedScrollView(
+              controller: _scrollController,
+              // physics: const NeverScrollableScrollPhysics(),
+              headerSliverBuilder:
+                  (BuildContext context, bool innerBoxIsScrolled) => [
+                SliverToBoxAdapter(
+                  child: _bannerBuilder(),
+                ),
+                SliverToBoxAdapter(
+                  child: _toolBar(), //导航栏
+                ),
+              ],
+              body: _topicListBuilder(),
             ),
-            SliverToBoxAdapter(
-              child: _toolBar(), //导航栏
+          ),
+          if (_isShowTopButton)
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: FloatingActionButton(
+                onPressed: () {
+                  if (_scrollController.hasClients) {
+                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                      _scrollController.animateTo(
+                        0, // 滚动到顶部
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutQuint,
+                      );
+                    });
+                  }
+                },
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                child: Image.asset(
+                  "assets/top.png",
+                  width: 100,
+                  fit: BoxFit.fitHeight,
+                ), // 去除阴影
+              ),
             ),
-          ],
-          body: _topicListBuilder(),
-        ),
+        ],
       ),
     );
   }
@@ -202,14 +257,13 @@ class _HomePageState extends State<HomePage> {
             children: [
               GestureDetector(
                 onTap: () {
-                  RouteUtils.push(context,const ShopPage());
+                  RouteUtils.push(context, const ShopPage());
                 },
                 child: Image.asset(
                   "assets/shop.png",
                   height: 62,
                 ),
-              )
-              ,
+              ),
               Text("福利兑换")
             ],
           ),
@@ -300,15 +354,37 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 Spacer(),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 2, horizontal: 5),
-                  decoration: BoxDecoration(
+                GestureDetector(
+                  onTap: () async {
+                    bool result = await likeAndFollow.follow(topic.userId);
+                    if (result) {
+                      setState(() {
+                        topic.isFollow = !topic.isFollow;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 2, horizontal: 5),
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(3),
                       border: Border.all(
-                          color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
-                  child: const Text(
-                    "+ 关注",
-                    style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
+                        color: topic.isFollow
+                            ? Colors.grey
+                            : const Color.fromRGBO(246, 153, 97, 1),
+                        width: topic.isFollow ? 1 : 2,
+                      ),
+                    ),
+                    child: topic.isFollow
+                        ? const Text(
+                            "已关注",
+                            style: TextStyle(color: Colors.grey),
+                          )
+                        : const Text(
+                            "+ 关注",
+                            style: TextStyle(
+                              color: Color.fromRGBO(246, 153, 97, 1),
+                            ),
+                          ),
                   ),
                 )
               ],
@@ -324,7 +400,7 @@ class _HomePageState extends State<HomePage> {
               topic.content,
               style: TextStyle(
                 fontSize: UiSizeUtil.homePageContentFontSize,
-                color: Color.fromRGBO(153, 156, 159, 1),
+                color: const Color.fromRGBO(153, 156, 159, 1),
               ),
               overflow: TextOverflow.ellipsis,
             ), // 内容
@@ -438,7 +514,7 @@ class _HomePageState extends State<HomePage> {
                         width: UiSizeUtil.likeIconSize,
                       ),
                       Container(
-                        margin: EdgeInsets.symmetric(horizontal: 5),
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
                         child: Text(
                           topic.likeNum.toString(),
                           style: TextStyle(
@@ -456,5 +532,22 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  void updateLikeState(
+    int topicID,
+    bool islike,
+  ) {
+    for (var topic in homePageRequest.topicList) {
+      if (topic.topicId == topicID) {
+        topic.isLike = islike;
+        if (islike) {
+          topic.likeNum++;
+        } else {
+          topic.likeNum--;
+        }
+      }
+    }
+    setState(() {});
   }
 }
