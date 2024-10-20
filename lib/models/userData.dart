@@ -132,19 +132,35 @@ class GameData {
     required this.userInfo,
   });
 
-  //下划线命名json
+  //下划线命名json，baseInfo,heroList,stageInfo,themeInfo,userInfo均可能返回空
   factory GameData.fromJson(Map<String, dynamic> json) {
     return GameData(
-      baseInfo: BaseInfo.fromJson(json['base_info']),
-      heroList:
-          (json['hero_list'] as List).map((i) => HeroList.fromJson(i)).toList(),
-      stageInfo: StageInfo.fromJson(json['stage_info']),
+      baseInfo: BaseInfo.fromJson(json['base_info'] ?? {}),
+      heroList: (json['hero_list'] as List)
+              .map((i) => HeroList.fromJson(i))
+              .toList() ??
+          [],
+      stageInfo: StageInfo.fromJson(json['stage_info'] ?? {}),
       themeInfo: (json['theme_info'] as List)
-          .map((i) => ThemeInfo.fromJson(i))
-          .toList(),
-      userInfo: UserInfo.fromJson(json['user_info']),
+              .map((i) => ThemeInfo.fromJson(i))
+              .toList() ??
+          [],
+      userInfo: UserInfo.fromJson(json['user_info'] ?? {}),
     );
   }
+
+  // factory GameData.fromJson(Map<String, dynamic> json) {
+  //   return GameData(
+  //     baseInfo: BaseInfo.fromJson(json['base_info']),
+  //     heroList:
+  //         (json['hero_list'] as List).map((i) => HeroList.fromJson(i)).toList(),
+  //     stageInfo: StageInfo.fromJson(json['stage_info']),
+  //     themeInfo: (json['theme_info'] as List)
+  //         .map((i) => ThemeInfo.fromJson(i))
+  //         .toList(),
+  //     userInfo: UserInfo.fromJson(json['user_info']),
+  //   );
+  // }
 
   Map<String, dynamic> toJson() {
     return {
@@ -174,15 +190,15 @@ class BaseInfo {
     required this.weaponCount,
   });
 
-  //下划线命名json
+  //下划线命名json，可能传入{}
   factory BaseInfo.fromJson(Map<String, dynamic> json) {
     return BaseInfo(
-      achievementCount: json['achievement_count'],
-      activeDays: json['active_days'],
-      heroCount: json['hero_count'],
-      mainStage: json['main_stage'],
-      skinCount: json['skin_count'],
-      weaponCount: json['weapon_count'],
+      achievementCount: json['achievement_count'] ?? -1,
+      activeDays: json['active_days'] ?? -1,
+      heroCount: json['hero_count'] ?? -1,
+      mainStage: json['main_stage'] ?? "-",
+      skinCount: json['skin_count'] ?? 0,
+      weaponCount: json['weapon_count'] ?? 0,
     );
   }
 
@@ -219,17 +235,17 @@ class HeroList {
     required this.skin,
   });
 
-  //下划线命名json
+  //下划线命名json，可能传入{
   factory HeroList.fromJson(Map<String, dynamic> json) {
     return HeroList(
-      duty: json['duty'],
-      id: json['id'],
-      lv: json['lv'],
-      name: json['name'],
-      rank: json['rank'],
-      serialId: json['serial_id'],
-      showPic: json['show_pic'],
-      skin: json['skin'],
+      duty: json['duty'] ?? 0,
+      id: json['id'] ?? 0,
+      lv: json['lv'] ?? 0,
+      name: json['name'] ?? "",
+      rank: json['rank'] ?? 0,
+      serialId: json['serial_id'] ?? 0,
+      showPic: json['show_pic'] ?? "",
+      skin: json['skin'] ?? "",
     );
   }
 
@@ -259,15 +275,17 @@ class StageInfo {
     required this.weekCommon,
     required this.weekSpecial,
   });
-  //下划线命名json
+
+  //下划线命名json，可能传入{}，传入weekSpecial的可能为null,json['week_special'] as List可能为null
   factory StageInfo.fromJson(Map<String, dynamic> json) {
     return StageInfo(
-      kuobianStage: KuobianStage.fromJson(json['kuobian_stage']),
-      towerStage: TowerStage.fromJson(json['tower_stage']),
-      weekCommon: WeekCommon.fromJson(json['week_common']),
-      weekSpecial: (json['week_special'] as List)
-          .map((i) => WeekSpecial.fromJson(i))
-          .toList(),
+      kuobianStage: KuobianStage.fromJson(json['kuobian_stage'] ?? {}),
+      towerStage: TowerStage.fromJson(json['tower_stage'] ?? {}),
+      weekCommon: WeekCommon.fromJson(json['week_common'] ?? {}),
+      weekSpecial: (json['week_special'] as List?)
+              ?.map((i) => WeekSpecial.fromJson(i))
+              .toList() ??
+          [],
     );
   }
 
@@ -298,15 +316,15 @@ class KuobianStage {
     required this.stayStage,
   });
 
-  //下划线命名json
+  //下划线命名json，可能传入{}，传入{}返回null
   factory KuobianStage.fromJson(Map<String, dynamic> json) {
     return KuobianStage(
-      caseId: json['case_id'],
-      name: json['name'],
-      showPic: json['show_pic'],
-      stageCode: json['stage_code'],
-      stageName: json['stage_name'],
-      stayStage: json['stay_stage'],
+      caseId: json['case_id'] ?? 0,
+      name: json['name'] ?? "",
+      showPic: json['show_pic'] ?? "",
+      stageCode: json['stage_code'] ?? "",
+      stageName: json['stage_name'] ?? "",
+      stayStage: json['stay_stage'] ?? 0,
     );
   }
 
@@ -341,16 +359,16 @@ class TowerStage {
     required this.stayStage,
   });
 
-  //下划线命名json
+  //下划线命名json，可能传入{}
   factory TowerStage.fromJson(Map<String, dynamic> json) {
     return TowerStage(
-      caseId: json['case_id'],
-      completePercent: json['complete_percent'],
-      name: json['name'],
-      showPic: json['show_pic'],
-      stageCode: json['stage_code'],
-      stageName: json['stage_name'],
-      stayStage: json['stay_stage'],
+      caseId: json['case_id'] ?? 0,
+      completePercent: json['complete_percent'] ?? 0,
+      name: json['name'] ?? "",
+      showPic: json['show_pic'] ?? "",
+      stageCode: json['stage_code'] ?? "",
+      stageName: json['stage_name'] ?? "",
+      stayStage: json['stay_stage'] ?? 0,
     );
   }
 
@@ -380,13 +398,13 @@ class WeekCommon {
     required this.stageRank,
   });
 
-  //下划线命名json
+  //下划线命名json，可能传入{
   factory WeekCommon.fromJson(Map<String, dynamic> json) {
     return WeekCommon(
-      maxScore: json['max_score'],
-      name: json['name'],
-      showPic: json['show_pic'],
-      stageRank: json['stage_rank'],
+      maxScore: json['max_score'] ?? 0,
+      name: json['name'] ?? "",
+      showPic: json['show_pic'] ?? "",
+      stageRank: json['stage_rank'] ?? 0,
     );
   }
 
@@ -417,15 +435,15 @@ class WeekSpecial {
     required this.stayStage,
   });
 
-  //下划线命名json
+  //下划线命名json，可能传入{
   factory WeekSpecial.fromJson(Map<String, dynamic> json) {
     return WeekSpecial(
-      caseId: json['case_id'],
-      name: json['name'],
-      showPic: json['show_pic'],
-      stageCode: json['stage_code'],
-      stageName: json['stage_name'],
-      stayStage: json['stay_stage'],
+      caseId: json['case_id'] ?? 0,
+      name: json['name'] ?? "",
+      showPic: json['show_pic'] ?? "",
+      stageCode: json['stage_code'] ?? "",
+      stageName: json['stage_name'] ?? "",
+      stayStage: json['stay_stage'] ?? 0,
     );
   }
 
@@ -452,12 +470,12 @@ class ThemeInfo {
     required this.showPic,
   });
 
-  //下划线命名json
+  //下划线命名json，可能传入{}
   factory ThemeInfo.fromJson(Map<String, dynamic> json) {
     return ThemeInfo(
-      caseId: json['case_id'],
-      completePercent: json['complete_percent'],
-      showPic: json['show_pic'],
+      caseId: json['case_id'] ?? 0,
+      completePercent: json['complete_percent'] ?? 0,
+      showPic: json['show_pic'] ?? "",
     );
   }
 
@@ -492,18 +510,18 @@ class UserInfo {
     required this.showStage,
     required this.showTheme,
   });
-  //下划线命名json
+  //下划线命名json，可能传入{}
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
-      avatar: json['avatar'],
-      gameUid: json['game_uid'],
-      guildName: json['guild_name'],
-      level: json['level'],
-      nickName: json['nick_name'],
-      showBase: json['show_base'],
-      showHero: json['show_hero'],
-      showStage: json['show_stage'],
-      showTheme: json['show_theme'],
+      avatar: json['avatar'] ?? "",
+      gameUid: json['game_uid'] ?? 0,
+      guildName: json['guild_name'] ?? "",
+      level: json['level'] ?? 0,
+      nickName: json['nick_name'] ?? "",
+      showBase: json['show_base'] ?? false,
+      showHero: json['show_hero'] ?? false,
+      showStage: json['show_stage'] ?? false,
+      showTheme: json['show_theme'] ?? false,
     );
   }
 
@@ -521,3 +539,81 @@ class UserInfo {
     };
   }
 }
+
+UserData defaultUserData = UserData(
+  authLock: 0,
+  authType: 0,
+  avatar: "",
+  exp: 0,
+  fans: 0,
+  favors: 0,
+  follows: 0,
+  gameCommanderLevel: 0,
+  gameNickName: "",
+  gameUid: 0,
+  ipLocation: "",
+  isAdmin: false,
+  isAuthor: false,
+  isFollow: false,
+  level: 0,
+  likes: 0,
+  nextLvExp: 0,
+  nickName: "",
+  score: 0,
+  showFans: false,
+  showFavor: false,
+  showFollow: false,
+  showGame: false,
+  signature: "",
+  uid: 0,
+);
+
+GameData defaultGameData = GameData(
+  baseInfo: BaseInfo(
+    achievementCount: 0,
+    activeDays: 0,
+    heroCount: 0,
+    mainStage: "",
+    skinCount: 0,
+    weaponCount: 0,
+  ),
+  heroList: [],
+  stageInfo: StageInfo(
+    kuobianStage: KuobianStage(
+      caseId: 0,
+      name: "",
+      showPic: "",
+      stageCode: "",
+      stageName: "",
+      stayStage: 0,
+    ),
+    towerStage: TowerStage(
+      caseId: 0,
+      completePercent: 0,
+      name: "",
+      showPic: "",
+      stageCode: "",
+      stageName: "",
+      stayStage: 0,
+    ),
+    weekCommon: WeekCommon(
+      maxScore: 0,
+      name: "",
+      showPic: "",
+      stageRank: 0,
+    ),
+    weekSpecial: [],
+  ),
+  themeInfo: [],
+  userInfo: UserInfo(
+    avatar: "",
+    gameUid: 0,
+    guildName: "",
+    level: 0,
+    nickName: "",
+    showBase: false,
+    showHero: false,
+    showStage: false,
+    showTheme: false,
+  ),
+);

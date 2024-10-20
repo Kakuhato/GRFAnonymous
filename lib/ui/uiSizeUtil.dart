@@ -72,6 +72,9 @@ class UiSizeUtil{
   // 二级评论字体大小
   static double secondCommentFontSize = 14;
 
+  // 二级评论时间字体大小
+  static double secondCommentTimeFontSize = 10;
+
   // 用户资料头像大小
   static double userAvatarSize = 70;
 

@@ -9,35 +9,26 @@ import 'package:flutter/material.dart';
 
 import '../ui/uiSizeUtil.dart';
 
-class MyPage extends StatefulWidget {
-  const MyPage({super.key});
+class OtherUserPage extends StatefulWidget {
+  final String uid;
+  const OtherUserPage({super.key, required this.uid});
 
   @override
-  State createState() => _MyPageState();
+  State createState() => _OtherUserPageState();
 }
 
-class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _OtherUserPageState extends State<OtherUserPage> {
   MyPageRequest myPageRequest = MyPageRequest();
   bool _isLoading = true;
-
   @override
   void initState() {
-    _tabController = TabController(length: 3, vsync: this);
     _refresh();
-    // _tabController = TabController(length: 3, vsync: this);
     super.initState();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
   Future<void> _refresh() async {
-    await myPageRequest.getUserData();
-    await myPageRequest.getGameData();
+    await myPageRequest.getOtherUserData(widget.uid);
+    await myPageRequest.getOtherGameData(widget.uid);
     setState(() {
       _isLoading = false;
     });
@@ -49,59 +40,66 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
         child: AppBar(
-          actions: [
-            IconButton(
-                onPressed: () {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    backgroundColor: Colors.black,
-                    (_) => Column(
-                      children: [
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
-                          ),
-                          child: ListTile(
-                            // leading: const Icon(Icons.settings),
-                            title: const Text(
-                              "退出登录",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            onTap: () {
-                              RouteUtils.pushAndRemove(
-                                  context, const LoginPage());
-                              LoginRequest.exit();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                icon: Icon(
-                  Icons.settings_outlined,
-                  color: Colors.white,
-                  size: UiSizeUtil.topIconSize,
-                ))
-          ],
-          title: Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.only(left: 45),
-              child: Text(
-                "我  的",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: UiSizeUtil.headerFontSize,
-                ),
-              )),
+          // actions: [
+          //   IconButton(
+          //     onPressed: () {
+          //       BottomSheetBuilder.showBottomSheet(
+          //         context,
+          //         backgroundColor: Colors.black,
+          //         (_) => Column(
+          //           children: [
+          //             const SizedBox(
+          //               height: 20,
+          //             ),
+          //             Container(
+          //               margin: const EdgeInsets.symmetric(horizontal: 20),
+          //               decoration: const BoxDecoration(
+          //                 color: Colors.red,
+          //                 borderRadius: BorderRadius.all(Radius.circular(10)),
+          //               ),
+          //               child: ListTile(
+          //                 // leading: const Icon(Icons.settings),
+          //                 title: const Text(
+          //                   "退出登录",
+          //                   textAlign: TextAlign.center,
+          //                   style: TextStyle(color: Colors.white),
+          //                 ),
+          //                 onTap: () {
+          //                   RouteUtils.pushAndRemove(
+          //                       context, const LoginPage());
+          //                   LoginRequest.exit();
+          //                 },
+          //               ),
+          //             ),
+          //           ],
+          //         ),
+          //       );
+          //     },
+          //     icon: Icon(
+          //       Icons.settings_outlined,
+          //       color: Colors.white,
+          //       size: UiSizeUtil.topIconSize,
+          //     ),
+          //   )
+          // ],
+          // title: Container(
+          //   alignment: Alignment.center,
+          //   padding: const EdgeInsets.only(left: 45),
+          //   child: Text(
+          //     "我  的",
+          //     style: TextStyle(
+          //       color: Colors.white,
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: UiSizeUtil.headerFontSize,
+          //     ),
+          //   ),
+          // ),
           backgroundColor: Colors.black,
+          automaticallyImplyLeading: true,
+          iconTheme: IconThemeData(
+            color: Colors.white,
+            size: UiSizeUtil.topIconSize,
+          ),
         ),
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
@@ -112,6 +110,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
           : EasyRefresh(
               triggerAxis: Axis.vertical,
               header: const MaterialHeader(),
+              footer: const CupertinoFooter(),
               child: ListView(
                 children: [
                   Stack(
@@ -146,35 +145,6 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                     ],
                   ),
                   _gameInfo(),
-                  // Column(
-                  //   children: [
-                  //     Container(
-                  //       margin: const EdgeInsets.symmetric(horizontal: 10),
-                  //       color: Colors.white,
-                  //       child: TabBar(
-                  //         controller: _tabController,
-                  //         indicatorColor: Colors.orange,
-                  //         labelColor: Colors.orange,
-                  //         unselectedLabelColor: Colors.grey,
-                  //         tabs: const [
-                  //           Tab(text: "帖子"),
-                  //           Tab(text: "评论"),
-                  //           Tab(text: "收藏"),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  // Expanded(
-                  //   child: TabBarView(
-                  //     controller: _tabController,
-                  //     children: [
-                  //       _buildTabContent("帖子"),
-                  //       _buildTabContent("评论"),
-                  //       _buildTabContent("收藏"),
-                  //     ],
-                  //   ),
-                  // ),
                 ],
               ),
             ),
@@ -371,7 +341,9 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                             // 头像
                             CachedNetworkImage(
                               imageUrl: myPageRequest
-                                  .gameData.userInfo.avatar, // 动态头像图片
+                                      .gameData.userInfo.avatar.isNotEmpty
+                                  ? myPageRequest.gameData.userInfo.avatar
+                                  : myPageRequest.userData.avatar, // 动态头像图片
                               height: 40,
                               width: 40,
                               fit: BoxFit.cover,
@@ -440,7 +412,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
     return Column(
       children: [
         Text(
-          value,
+          value == "-1" ? "-" : value,
           style: TextStyle(
             color: Colors.white,
             fontSize: UiSizeUtil.gameInfoCardUserNameFontSize,
@@ -455,51 +427,6 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _moreInfo() {
-    return Column(
-      children: [
-        Container(
-          color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.orange,
-            labelColor: Colors.orange,
-            unselectedLabelColor: Colors.grey,
-            tabs: const [
-              Tab(text: "帖子"),
-              Tab(text: "评论"),
-              Tab(text: "收藏"),
-            ],
-          ),
-        ),
-        // Expanded 用来确保 TabBarView 占据剩余的可用空间
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              Center(child: Text("帖子")),
-              Center(child: Text("评论")),
-              Center(child: Text("收藏")),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTabContent(String content) {
-    List<String> data = List.generate(20, (index) => '$content Item $index');
-
-    return ListView.builder(
-      itemCount: data.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(data[index]),
-        );
-      },
     );
   }
 }

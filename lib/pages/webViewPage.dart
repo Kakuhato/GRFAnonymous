@@ -260,52 +260,54 @@ class _WebViewPageState extends State<WebViewPage> {
           bottomRight: Radius.circular(10),
         ),
       ),
-      child: HtmlWidget(
-        webViewRequest.webViewContent.content,
-        factoryBuilder: () => MyWidgetFactory(),
-        customStylesBuilder: (element) {
-          if (element.localName == 'p') {
-            return {
-              'margin': '5px 0',
-            };
-          }
-
-          final style = element.attributes['style'];
-          if (style != null) {
-            final styles = style.split(';');
-            Map<String, String> styleMap = {};
-            for (var s in styles) {
-              final keyValue = s.split(':');
-              if (keyValue.length == 2) {
-                styleMap[keyValue[0].trim()] = keyValue[1].trim();
-              }
+      child: SelectionArea(
+        child: HtmlWidget(
+          webViewRequest.webViewContent.content,
+          factoryBuilder: () => MyWidgetFactory(),
+          customStylesBuilder: (element) {
+            if (element.localName == 'p') {
+              return {
+                'margin': '5px 0',
+              };
             }
 
-            // 如果背景颜色是黑色，则将文字颜色设置为白色
-            if (styleMap.containsKey('background-color')) {
-              String backgroundColor = styleMap['background-color']!;
-              if (backgroundColor.contains('rgb(0, 0, 0)') ||
-                  backgroundColor == '#000000' ||
-                  backgroundColor == 'black') {
-                return {
-                  'text-decoration': 'line-through',
-                  'color': 'white', // 黑色背景时，文字颜色设置为白色
-                };
+            final style = element.attributes['style'];
+            if (style != null) {
+              final styles = style.split(';');
+              Map<String, String> styleMap = {};
+              for (var s in styles) {
+                final keyValue = s.split(':');
+                if (keyValue.length == 2) {
+                  styleMap[keyValue[0].trim()] = keyValue[1].trim();
+                }
               }
-            }
 
-            return {
-              if (styleMap.containsKey('font-size'))
-                'font-size': styleMap['font-size'] ?? '14px',
-              if (styleMap.containsKey('color'))
-                'color': styleMap['color'] ?? 'black',
-            };
-          }
-          return null;
-        },
-        textStyle: TextStyle(
-          fontSize: UiSizeUtil.postContentFontSize,
-          color: Colors.black,
+              // 如果背景颜色是黑色，则将文字颜色设置为白色
+              if (styleMap.containsKey('background-color')) {
+                String backgroundColor = styleMap['background-color']!;
+                if (backgroundColor.contains('rgb(0, 0, 0)') ||
+                    backgroundColor == '#000000' ||
+                    backgroundColor == 'black') {
+                  return {
+                    'text-decoration': 'line-through',
+                    'color': 'white', // 黑色背景时，文字颜色设置为白色
+                  };
+                }
+              }
+
+              return {
+                if (styleMap.containsKey('font-size'))
+                  'font-size': styleMap['font-size'] ?? '14px',
+                if (styleMap.containsKey('color'))
+                  'color': styleMap['color'] ?? 'black',
+              };
+            }
+            return null;
+          },
+          textStyle: TextStyle(
+            fontSize: UiSizeUtil.postContentFontSize,
+            color: Colors.black,
+          ),
         ),
       ),
     );
@@ -419,52 +421,54 @@ class _WebViewPageState extends State<WebViewPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: HtmlWidget(
-              reply.content,
-              factoryBuilder: () => MyWidgetFactory(),
-              customStylesBuilder: (element) {
-                if (element.localName == 'p') {
-                  return {
-                    'margin': '5px 0',
-                  };
-                }
-
-                final style = element.attributes['style'];
-                if (style != null) {
-                  final styles = style.split(';');
-                  Map<String, String> styleMap = {};
-                  for (var s in styles) {
-                    final keyValue = s.split(':');
-                    if (keyValue.length == 2) {
-                      styleMap[keyValue[0].trim()] = keyValue[1].trim();
-                    }
+            child: SelectionArea(
+              child: HtmlWidget(
+                reply.content,
+                factoryBuilder: () => MyWidgetFactory(),
+                customStylesBuilder: (element) {
+                  if (element.localName == 'p') {
+                    return {
+                      'margin': '5px 0',
+                    };
                   }
 
-                  // 如果背景颜色是黑色，则将文字颜色设置为白色
-                  if (styleMap.containsKey('background-color')) {
-                    String backgroundColor = styleMap['background-color']!;
-                    if (backgroundColor.contains('rgb(0, 0, 0)') ||
-                        backgroundColor == '#000000' ||
-                        backgroundColor == 'black') {
-                      return {
-                        'text-decoration': 'line-through',
-                        'color': 'white', // 黑色背景时，文字颜色设置为白色
-                      };
+                  final style = element.attributes['style'];
+                  if (style != null) {
+                    final styles = style.split(';');
+                    Map<String, String> styleMap = {};
+                    for (var s in styles) {
+                      final keyValue = s.split(':');
+                      if (keyValue.length == 2) {
+                        styleMap[keyValue[0].trim()] = keyValue[1].trim();
+                      }
                     }
-                  }
 
-                  return {
-                    if (styleMap.containsKey('font-size'))
-                      'font-size': styleMap['font-size'] ?? '14px',
-                    if (styleMap.containsKey('color'))
-                      'color': styleMap['color'] ?? 'black',
-                  };
-                }
-                return null;
-              },
-              textStyle: TextStyle(
-                fontSize: UiSizeUtil.postContentFontSize,
-                color: Colors.black,
+                    // 如果背景颜色是黑色，则将文字颜色设置为白色
+                    if (styleMap.containsKey('background-color')) {
+                      String backgroundColor = styleMap['background-color']!;
+                      if (backgroundColor.contains('rgb(0, 0, 0)') ||
+                          backgroundColor == '#000000' ||
+                          backgroundColor == 'black') {
+                        return {
+                          'text-decoration': 'line-through',
+                          'color': 'white', // 黑色背景时，文字颜色设置为白色
+                        };
+                      }
+                    }
+
+                    return {
+                      if (styleMap.containsKey('font-size'))
+                        'font-size': styleMap['font-size'] ?? '14px',
+                      if (styleMap.containsKey('color'))
+                        'color': styleMap['color'] ?? 'black',
+                    };
+                  }
+                  return null;
+                },
+                textStyle: TextStyle(
+                  fontSize: UiSizeUtil.postContentFontSize,
+                  color: Colors.black,
+                ),
               ),
             ),
           ),
@@ -626,7 +630,7 @@ class _WebViewPageState extends State<WebViewPage> {
               const Text(" ："),
             ],
           ),
-          Container(
+          SelectionArea(
             child: HtmlWidget(
               reply.content,
               factoryBuilder: () => MyWidgetFactory(),
@@ -676,6 +680,18 @@ class _WebViewPageState extends State<WebViewPage> {
               ),
             ),
           ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                reply.createTime,
+                style: TextStyle(
+                  fontSize: UiSizeUtil.secondCommentTimeFontSize,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          )
         ],
       ),
     );
