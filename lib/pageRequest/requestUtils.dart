@@ -32,6 +32,7 @@ enum CategoryId {
 //主页下栏目
 enum QueryType {
   homepage(1, "主页"),
+  favor(2, "收藏"),
   follow(3, "关注"),
   identity(4, "我的");
 

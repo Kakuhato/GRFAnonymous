@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 
 class FollowPageRequest {
   List<Topic> topicList = [];
-  // Dio dio = Dio();
   int hotValue = 0;
   int lastTid = 0;
   bool nextPage = true;
@@ -51,7 +50,7 @@ class FollowPageRequest {
         "pub_time": pubTime,
       });
     }
-    if (response.data != null) {
+    if (response.data["Code"] == 0 && (response.data["data"]["list"] as List).isNotEmpty) {
       // print(response.requestOptions.queryParameters);
       // print(response);
       var list = response.data['data']['list'] as List;

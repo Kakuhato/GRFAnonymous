@@ -46,10 +46,19 @@ class _FollowPageState extends State<FollowPage> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
         child: AppBar(
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              color: Colors.white,
+              onPressed: () {
+                refreshData();
+              },
+            ),
+          ],
           backgroundColor: Colors.black,
           title: Container(
               alignment: Alignment.center,
-              padding: const EdgeInsets.only(left: 0),
+              padding: const EdgeInsets.only(left: 45),
               child: Text(
                 "关  注",
                 style: TextStyle(
@@ -67,18 +76,34 @@ class _FollowPageState extends State<FollowPage> {
         // footer: const CupertinoFooter(),
         // refreshOnStart: true,
         onRefresh: () async {
-          return await refreshData();
+          await refreshData();
         },
         onLoad: () async {
-          return await loadData();
+          await loadData();
         },
-        child: NestedScrollView(
-          headerSliverBuilder:
-              (BuildContext context, bool innerBoxIsScrolled) => [
-            const SliverToBoxAdapter(),
-            const SliverToBoxAdapter(),
-          ],
-          body: _topicListBuilder(),
+        child: SingleChildScrollView(
+          // headerSliverBuilder:
+          //     (BuildContext context, bool innerBoxIsScrolled) => [
+          //   const SliverToBoxAdapter(),
+          //   const SliverToBoxAdapter(),
+          // ],
+          child: Column(
+            children: [
+              _topicListBuilder(),
+              if (!followPageRequest.nextPage ||
+                  followPageRequest.topicList.isEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: 10, bottom: 10),
+                  child: const Text(
+                    "没有更多了",
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color.fromRGBO(150, 151, 153, 1),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -91,7 +116,7 @@ class _FollowPageState extends State<FollowPage> {
       },
       itemCount: followPageRequest.topicList.length,
       shrinkWrap: true,
-      // physics: const NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
     );
   }
 

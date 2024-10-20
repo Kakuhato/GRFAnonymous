@@ -18,6 +18,8 @@ import '../ui/uiSizeUtil.dart';
 import '../utils/routeUtil.dart';
 
 class MessagePage extends StatefulWidget {
+  const MessagePage({super.key});
+
   @override
   State createState() => _MessagePageState();
 }
@@ -26,7 +28,8 @@ class _MessagePageState extends State<MessagePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  ReplyNotificationRequest replyNotificationRequest = ReplyNotificationRequest();
+  ReplyNotificationRequest replyNotificationRequest =
+      ReplyNotificationRequest();
   LikeNotificationRequest likeNotificationRequest = LikeNotificationRequest();
   FollowNotificationRequest followNotificationRequest =
       FollowNotificationRequest();
@@ -44,7 +47,26 @@ class _MessagePageState extends State<MessagePage>
     await likeNotificationRequest.getLikeNotification(true);
     await followNotificationRequest.getFollowNotification(true);
     await infoNotificationRequest.getInfoNotification(true);
+    setState(() {});
+  }
 
+  _clearAll(){
+    for (var item in replyNotificationRequest.replyList) {
+      item.isRead = true;
+    }
+    for (var item in likeNotificationRequest.likeList) {
+      item.isRead = true;
+    }
+    for (var item in followNotificationRequest.followList) {
+      item.isRead = true;
+    }
+    for (var item in infoNotificationRequest.infoList) {
+      item.isRead = true;
+    }
+    replyNotificationRequest.unread = 0;
+    likeNotificationRequest.unread = 0;
+    followNotificationRequest.unread = 0;
+    infoNotificationRequest.unread = 0;
     setState(() {});
   }
 
@@ -62,8 +84,10 @@ class _MessagePageState extends State<MessagePage>
         child: AppBar(
           actions: [
             IconButton(
-                onPressed: () {
-                  showToast("msg");
+                onPressed: () async {
+                  await replyNotificationRequest.readAll();
+                  _clearAll();
+                  setState(() {});
                 },
                 icon: Icon(
                   Icons.cleaning_services_outlined,
@@ -156,20 +180,20 @@ class _MessagePageState extends State<MessagePage>
     );
   }
 
-  Widget _buildRplyTab(){
+  Widget _buildRplyTab() {
     return EasyRefresh(
       header: const MaterialHeader(),
       // footer: const MaterialFooter(),
       onRefresh: () async {
-        await replyNotificationRequest.getReplyNotification(true);
+        _notificationListInit();
         setState(() {});
       },
       onLoad: replyNotificationRequest.replyList.length !=
-          replyNotificationRequest.total
+              replyNotificationRequest.total
           ? () async {
-        await replyNotificationRequest.getReplyNotification(false);
-        setState(() {});
-      }
+              await replyNotificationRequest.getReplyNotification(false);
+              setState(() {});
+            }
           : null,
       child: SingleChildScrollView(
         child: Column(
@@ -200,7 +224,7 @@ class _MessagePageState extends State<MessagePage>
     );
   }
 
-  Widget _replyTab(ReplyItem item){
+  Widget _replyTab(ReplyItem item) {
     return GestureDetector(
       child: Container(
         color: Colors.white,
@@ -307,7 +331,7 @@ class _MessagePageState extends State<MessagePage>
       onLoad: likeNotificationRequest.likeList.length !=
               likeNotificationRequest.total
           ? () async {
-              await likeNotificationRequest.getLikeNotification(false);
+              _notificationListInit();
               setState(() {});
             }
           : null,
@@ -433,7 +457,7 @@ class _MessagePageState extends State<MessagePage>
       onLoad: followNotificationRequest.followList.length !=
               followNotificationRequest.total
           ? () async {
-              await followNotificationRequest.getFollowNotification(false);
+              _notificationListInit();
               setState(() {});
             }
           : null,
@@ -538,16 +562,11 @@ class _MessagePageState extends State<MessagePage>
         ),
       ),
       onTap: () {
-        RouteUtils.push(context,
+        // showToast(item.userId.toString());
+        RouteUtils.push(
+          context,
           OtherUserPage(uid: item.userId.toString()),
         );
-        // showToast("msg");
-        // RouteUtils.push(
-        //   context,
-        //   WebViewPage(
-        //     topicId: item.topicId.toString(),
-        //   ),
-        // );
       },
     );
   }
@@ -563,7 +582,7 @@ class _MessagePageState extends State<MessagePage>
       onLoad: infoNotificationRequest.infoList.length !=
               infoNotificationRequest.total
           ? () async {
-              await infoNotificationRequest.getInfoNotification(false);
+              _notificationListInit();
               setState(() {});
             }
           : null,
@@ -601,7 +620,8 @@ class _MessagePageState extends State<MessagePage>
       child: Container(
         color: Colors.white,
         margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.all(10).add(const EdgeInsets.only(bottom: 15)),
+        padding:
+            const EdgeInsets.all(10).add(const EdgeInsets.only(bottom: 15)),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

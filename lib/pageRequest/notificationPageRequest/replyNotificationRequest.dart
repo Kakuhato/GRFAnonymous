@@ -41,5 +41,12 @@ class ReplyNotificationRequest {
     }
   }
 
+  Future readAll() async{
+    Response response = await DioInstance.instance().post(
+      path: "/community/message/read_all",
+      data: {},
+    );
+  }
+
 
 }

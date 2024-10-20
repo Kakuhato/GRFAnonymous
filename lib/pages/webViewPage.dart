@@ -10,6 +10,8 @@ import 'package:oktoast/oktoast.dart';
 import '../pageRequest/likeAndFollow.dart';
 import '../ui/uiSizeUtil.dart';
 import '../utils/globalKey.dart';
+import '../utils/routeUtil.dart';
+import 'otherUserPage.dart';
 
 class WebViewPage extends StatefulWidget {
   final String topicId;
@@ -173,55 +175,65 @@ class _WebViewPageState extends State<WebViewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              ClipOval(
-                  child: CachedNetworkImage(
-                imageUrl: webViewRequest.webViewContent.userAvatar,
-                width: UiSizeUtil.postAvatarSize,
-                height: UiSizeUtil.postAvatarSize,
-              )),
-              Container(
-                margin: const EdgeInsets.only(left: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          webViewRequest.webViewContent.userNickName,
-                          style: TextStyle(
-                            fontSize: UiSizeUtil.postUserNameFontSize,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            color: const Color.fromRGBO(248, 181, 141, 1),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 2),
-                          margin: const EdgeInsets.only(left: 10),
-                          child: Text(
-                            "lv.${webViewRequest.webViewContent.userLevel}",
+          GestureDetector(
+            onTap: () {
+              // showToast(webViewRequest.webViewContent.userId.toString());
+              RouteUtils.push(
+                context,
+                OtherUserPage(
+                    uid: webViewRequest.webViewContent.userId.toString()),
+              );
+            },
+            child: Row(
+              children: [
+                ClipOval(
+                    child: CachedNetworkImage(
+                  imageUrl: webViewRequest.webViewContent.userAvatar,
+                  width: UiSizeUtil.postAvatarSize,
+                  height: UiSizeUtil.postAvatarSize,
+                )),
+                Container(
+                  margin: const EdgeInsets.only(left: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            webViewRequest.webViewContent.userNickName,
                             style: TextStyle(
-                              fontSize: UiSizeUtil.levelFontSize,
-                              color: Color.fromRGBO(242, 108, 86, 1),
+                              fontSize: UiSizeUtil.postUserNameFontSize,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "${webViewRequest.webViewContent.viewNum}阅读  ${webViewRequest.webViewContent.ipLocation}",
-                      style: TextStyle(
-                          fontSize: UiSizeUtil.postTimeFontSize,
-                          color: Colors.grey),
-                    ),
-                  ],
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5),
+                              color: const Color.fromRGBO(248, 181, 141, 1),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 2),
+                            margin: const EdgeInsets.only(left: 10),
+                            child: Text(
+                              "lv.${webViewRequest.webViewContent.userLevel}",
+                              style: TextStyle(
+                                fontSize: UiSizeUtil.levelFontSize,
+                                color: Color.fromRGBO(242, 108, 86, 1),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        "${webViewRequest.webViewContent.viewNum}阅读  ${webViewRequest.webViewContent.ipLocation}",
+                        style: TextStyle(
+                            fontSize: UiSizeUtil.postTimeFontSize,
+                            color: Colors.grey),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Container(
             margin: const EdgeInsets.only(top: 10),
@@ -339,76 +351,87 @@ class _WebViewPageState extends State<WebViewPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 第一行：头像 + 用户名 + 时间
-          Row(
-            children: [
-              // 头像
-              ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl: reply.userAvatar, // 替换为实际头像URL
-                  width: UiSizeUtil.postAvatarSize,
-                  height: UiSizeUtil.postAvatarSize,
-                  placeholder: (context, url) => CircularProgressIndicator(),
-                  errorWidget: (context, url, error) => Icon(Icons.error),
+          GestureDetector(
+            onTap: () {
+              // showToast(webViewRequest.webViewContent.userId.toString());
+              RouteUtils.push(
+                context,
+                OtherUserPage(
+                  uid: reply.userId.toString(),
                 ),
-              ),
-              SizedBox(width: 8),
-              // 用户名 + 时间
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        reply.userNickName,
-                        style: TextStyle(
-                          fontSize: UiSizeUtil.postUserNameFontSize,
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(248, 181, 141, 1),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          "lv.${reply.userLevel}",
+              );
+            },
+            child: Row(
+              children: [
+                // 头像
+                ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: reply.userAvatar, // 替换为实际头像URL
+                    width: UiSizeUtil.postAvatarSize,
+                    height: UiSizeUtil.postAvatarSize,
+                    placeholder: (context, url) => CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => Icon(Icons.error),
+                  ),
+                ),
+                SizedBox(width: 8),
+                // 用户名 + 时间
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          reply.userNickName,
                           style: TextStyle(
-                            fontSize: UiSizeUtil.levelFontSize,
-                            color: const Color.fromRGBO(242, 108, 28, 1),
+                            fontSize: UiSizeUtil.postUserNameFontSize,
                           ),
                         ),
-                      ),
-                      if (reply.isAuthor)
                         Container(
+                          margin: const EdgeInsets.only(left: 8),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 5, vertical: 2),
-                          margin: const EdgeInsets.only(left: 8),
                           decoration: BoxDecoration(
                             color: const Color.fromRGBO(248, 181, 141, 1),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text(
-                            "作者",
+                          child: Text(
+                            "lv.${reply.userLevel}",
                             style: TextStyle(
-                              fontSize: 13,
-                              color: Color.fromRGBO(242, 108, 28, 1),
+                              fontSize: UiSizeUtil.levelFontSize,
+                              color: const Color.fromRGBO(242, 108, 28, 1),
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  Text(
-                    '${reply.floorNum}L   ${reply.createTime} ${reply.ipLocation}',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: UiSizeUtil.postTimeFontSize,
+                        if (reply.isAuthor)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 2),
+                            margin: const EdgeInsets.only(left: 8),
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(248, 181, 141, 1),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: const Text(
+                              "作者",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color.fromRGBO(242, 108, 28, 1),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    Text(
+                      '${reply.floorNum}L   ${reply.createTime} ${reply.ipLocation}',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: UiSizeUtil.postTimeFontSize,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           // 正文内容
@@ -472,7 +495,6 @@ class _WebViewPageState extends State<WebViewPage> {
               ),
             ),
           ),
-
           // 次级回复区域
           _secondaryReplyListBuilder(reply.commentReply),
 
@@ -566,11 +588,20 @@ class _WebViewPageState extends State<WebViewPage> {
         children: [
           Wrap(
             children: [
-              Text(
-                reply.userNickName,
-                style: TextStyle(
-                  fontSize: UiSizeUtil.secondCommentUserNameFontSize,
-                  color: Color.fromRGBO(242, 108, 28, 1),
+              GestureDetector(
+                onTap: () {
+                  // showToast(webViewRequest.webViewContent.userId.toString());
+                  RouteUtils.push(
+                    context,
+                    OtherUserPage(uid: reply.userId.toString()),
+                  );
+                },
+                child: Text(
+                  reply.userNickName,
+                  style: TextStyle(
+                    fontSize: UiSizeUtil.secondCommentUserNameFontSize,
+                    color: Color.fromRGBO(242, 108, 28, 1),
+                  ),
                 ),
               ),
               if (reply.isAuthor)
@@ -601,11 +632,21 @@ class _WebViewPageState extends State<WebViewPage> {
                       )),
                 ),
               if (reply.replyTo != null)
-                Text(
-                  reply.replyTo!,
-                  style: TextStyle(
-                    fontSize: UiSizeUtil.secondCommentUserNameFontSize,
-                    color: Color.fromRGBO(242, 108, 28, 1),
+                GestureDetector(
+                  onTap: () {
+                    // showToast(webViewRequest.webViewContent.userId.toString());
+                    RouteUtils.push(
+                      context,
+                      OtherUserPage(
+                          uid: reply.replyToUid.toString()),
+                    );
+                  },
+                  child: Text(
+                    reply.replyTo!,
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.secondCommentUserNameFontSize,
+                      color: Color.fromRGBO(242, 108, 28, 1),
+                    ),
                   ),
                 ),
               if (reply.replyToUid == webViewRequest.webViewContent.userId)

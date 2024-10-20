@@ -15,7 +15,7 @@ class UserData {
   bool isAuthor;
   bool isFollow;
   int level;
-  int likes;
+  String likes;
   int nextLvExp;
   String nickName;
   int score;
@@ -72,7 +72,7 @@ class UserData {
       isAuthor: json['is_author'],
       isFollow: json['is_follow'],
       level: json['level'],
-      likes: json['likes'],
+      likes: json['likes'].toString(),
       nextLvExp: json['next_lv_exp'],
       nickName: json['nick_name'],
       score: json['score'],
@@ -556,7 +556,7 @@ UserData defaultUserData = UserData(
   isAuthor: false,
   isFollow: false,
   level: 0,
-  likes: 0,
+  likes: "0",
   nextLvExp: 0,
   nickName: "",
   score: 0,
