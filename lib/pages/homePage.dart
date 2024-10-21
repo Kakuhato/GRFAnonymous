@@ -550,4 +550,14 @@ class HomePageState extends State<HomePage> {
     }
     setState(() {});
   }
+
+  void updateFollowState(int userID, bool isFollow) {
+    for (var topic in homePageRequest.topicList) {
+      if (topic.userId == userID) {
+        topic.isFollow = isFollow;
+      }
+    }
+    setState(() {});
+  }
+
 }

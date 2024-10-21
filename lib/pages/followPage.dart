@@ -21,6 +21,8 @@ class FollowPage extends StatefulWidget {
 class _FollowPageState extends State<FollowPage> {
   FollowPageRequest followPageRequest = FollowPageRequest();
   LikeAndFollow likeAndFollow = LikeAndFollow();
+  EasyRefreshController easyRefreshController = EasyRefreshController();
+  ScrollController scrollController = ScrollController();
 
   @override
   void initState() {
@@ -51,7 +53,7 @@ class _FollowPageState extends State<FollowPage> {
               icon: const Icon(Icons.refresh),
               color: Colors.white,
               onPressed: () {
-                refreshData();
+                easyRefreshController.callRefresh(scrollController: scrollController);
               },
             ),
           ],
@@ -71,6 +73,7 @@ class _FollowPageState extends State<FollowPage> {
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
       body: EasyRefresh(
+        controller: easyRefreshController,
         triggerAxis: Axis.vertical,
         header: const MaterialHeader(),
         // footer: const CupertinoFooter(),
@@ -81,15 +84,18 @@ class _FollowPageState extends State<FollowPage> {
         onLoad: () async {
           await loadData();
         },
-        child: SingleChildScrollView(
-          // headerSliverBuilder:
-          //     (BuildContext context, bool innerBoxIsScrolled) => [
-          //   const SliverToBoxAdapter(),
-          //   const SliverToBoxAdapter(),
-          // ],
-          child: Column(
+
+        child: NestedScrollView(
+          // controller: scrollController,
+          headerSliverBuilder:
+              (BuildContext context, bool innerBoxIsScrolled) => [
+            const SliverToBoxAdapter(),
+          ],
+          body: Column(
             children: [
-              _topicListBuilder(),
+              Flexible(
+                child: _topicListBuilder(),
+              ),
               if (!followPageRequest.nextPage ||
                   followPageRequest.topicList.isEmpty)
                 Container(
@@ -111,12 +117,13 @@ class _FollowPageState extends State<FollowPage> {
 
   Widget _topicListBuilder() {
     return ListView.builder(
+      controller: scrollController,
       itemBuilder: (context, index) {
         return _topicBuilder(followPageRequest.topicList[index]);
       },
       itemCount: followPageRequest.topicList.length,
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      // physics: const NeverScrollableScrollPhysics(),
     );
   }
 

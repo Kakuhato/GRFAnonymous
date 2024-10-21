@@ -1,3 +1,5 @@
+import '../pageRequest/requestUtils.dart';
+
 ///UserData
 class UserData {
   int authLock;
@@ -617,3 +619,66 @@ GameData defaultGameData = GameData(
     showTheme: false,
   ),
 );
+
+class ListParams{
+  int hotValue = 0;
+  int lastTid = 0;
+  bool nextPage = true;
+  int pubTime = 0;
+  int replyTime = 0;
+  int total = 0;
+  int pageNum = 0;
+  int createTime = 0;
+  SortType sortType = SortType.reply;
+  CategoryId categoryId = CategoryId.none;
+  QueryType queryType = QueryType.identity;
+
+  ListParams({
+    this.hotValue = 0,
+    this.lastTid = 0,
+    this.nextPage = true,
+    this.pubTime = 0,
+    this.replyTime = 0,
+    this.total = 0,
+    this.pageNum = 0,
+    this.createTime = 0,
+    this.sortType = SortType.reply,
+    this.categoryId = CategoryId.none,
+    this.queryType = QueryType.identity,
+  });
+
+}
+
+class MyReply {
+  String content;
+  String createTime;
+  String title;
+  int topicId;
+
+  MyReply({
+    required this.content,
+    required this.createTime,
+    required this.title,
+    required this.topicId,
+  });
+
+  //下划线命名json
+  factory MyReply.fromJson(Map<String, dynamic> json) {
+    return MyReply(
+      content: json['content'],
+      createTime: json['create_time'],
+      title: json['title'],
+      topicId: json['topic_id'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'content': content,
+      'create_time': createTime,
+      'title': title,
+      'topic_id': topicId,
+    };
+  }
+
+}

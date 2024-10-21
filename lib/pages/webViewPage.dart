@@ -244,15 +244,30 @@ class _WebViewPageState extends State<WebViewPage> {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            child: Text(
-              "发布于 ${webViewRequest.webViewContent.createTime}",
-              style: TextStyle(
-                fontSize: UiSizeUtil.postTimeFontSize,
-                color: Color.fromRGBO(153, 153, 153, 1),
+          Row(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 10),
+                child: Text(
+                  "发布于 ${webViewRequest.webViewContent.createTime}",
+                  style: TextStyle(
+                    fontSize: UiSizeUtil.postTimeFontSize,
+                    color: Color.fromRGBO(153, 153, 153, 1),
+                  ),
+                ),
               ),
-            ),
+              if (webViewRequest.webViewContent.updateTime != "")
+                Container(
+                  margin: const EdgeInsets.only(top: 10, left: 5),
+                  child: Text(
+                    "编辑于 ${webViewRequest.webViewContent.updateTime}",
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.postTimeFontSize,
+                      color: const Color.fromRGBO(153, 153, 153, 1),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -277,44 +292,7 @@ class _WebViewPageState extends State<WebViewPage> {
           webViewRequest.webViewContent.content,
           factoryBuilder: () => MyWidgetFactory(),
           customStylesBuilder: (element) {
-            if (element.localName == 'p') {
-              return {
-                'margin': '5px 0',
-              };
-            }
-
-            final style = element.attributes['style'];
-            if (style != null) {
-              final styles = style.split(';');
-              Map<String, String> styleMap = {};
-              for (var s in styles) {
-                final keyValue = s.split(':');
-                if (keyValue.length == 2) {
-                  styleMap[keyValue[0].trim()] = keyValue[1].trim();
-                }
-              }
-
-              // 如果背景颜色是黑色，则将文字颜色设置为白色
-              if (styleMap.containsKey('background-color')) {
-                String backgroundColor = styleMap['background-color']!;
-                if (backgroundColor.contains('rgb(0, 0, 0)') ||
-                    backgroundColor == '#000000' ||
-                    backgroundColor == 'black') {
-                  return {
-                    'text-decoration': 'line-through',
-                    'color': 'white', // 黑色背景时，文字颜色设置为白色
-                  };
-                }
-              }
-
-              return {
-                if (styleMap.containsKey('font-size'))
-                  'font-size': styleMap['font-size'] ?? '14px',
-                if (styleMap.containsKey('color'))
-                  'color': styleMap['color'] ?? 'black',
-              };
-            }
-            return null;
+            return HtmlProcess.buildCustomStyles(element);
           },
           textStyle: TextStyle(
             fontSize: UiSizeUtil.postContentFontSize,
@@ -449,44 +427,7 @@ class _WebViewPageState extends State<WebViewPage> {
                 reply.content,
                 factoryBuilder: () => MyWidgetFactory(),
                 customStylesBuilder: (element) {
-                  if (element.localName == 'p') {
-                    return {
-                      'margin': '5px 0',
-                    };
-                  }
-
-                  final style = element.attributes['style'];
-                  if (style != null) {
-                    final styles = style.split(';');
-                    Map<String, String> styleMap = {};
-                    for (var s in styles) {
-                      final keyValue = s.split(':');
-                      if (keyValue.length == 2) {
-                        styleMap[keyValue[0].trim()] = keyValue[1].trim();
-                      }
-                    }
-
-                    // 如果背景颜色是黑色，则将文字颜色设置为白色
-                    if (styleMap.containsKey('background-color')) {
-                      String backgroundColor = styleMap['background-color']!;
-                      if (backgroundColor.contains('rgb(0, 0, 0)') ||
-                          backgroundColor == '#000000' ||
-                          backgroundColor == 'black') {
-                        return {
-                          'text-decoration': 'line-through',
-                          'color': 'white', // 黑色背景时，文字颜色设置为白色
-                        };
-                      }
-                    }
-
-                    return {
-                      if (styleMap.containsKey('font-size'))
-                        'font-size': styleMap['font-size'] ?? '14px',
-                      if (styleMap.containsKey('color'))
-                        'color': styleMap['color'] ?? 'black',
-                    };
-                  }
-                  return null;
+                  return HtmlProcess.buildCustomStyles(element);
                 },
                 textStyle: TextStyle(
                   fontSize: UiSizeUtil.postContentFontSize,
@@ -637,8 +578,7 @@ class _WebViewPageState extends State<WebViewPage> {
                     // showToast(webViewRequest.webViewContent.userId.toString());
                     RouteUtils.push(
                       context,
-                      OtherUserPage(
-                          uid: reply.replyToUid.toString()),
+                      OtherUserPage(uid: reply.replyToUid.toString()),
                     );
                   },
                   child: Text(
@@ -676,44 +616,7 @@ class _WebViewPageState extends State<WebViewPage> {
               reply.content,
               factoryBuilder: () => MyWidgetFactory(),
               customStylesBuilder: (element) {
-                if (element.localName == 'p') {
-                  return {
-                    'margin': '5px 0',
-                  };
-                }
-
-                final style = element.attributes['style'];
-                if (style != null) {
-                  final styles = style.split(';');
-                  Map<String, String> styleMap = {};
-                  for (var s in styles) {
-                    final keyValue = s.split(':');
-                    if (keyValue.length == 2) {
-                      styleMap[keyValue[0].trim()] = keyValue[1].trim();
-                    }
-                  }
-
-                  // 如果背景颜色是黑色，则将文字颜色设置为白色
-                  if (styleMap.containsKey('background-color')) {
-                    String backgroundColor = styleMap['background-color']!;
-                    if (backgroundColor.contains('rgb(0, 0, 0)') ||
-                        backgroundColor == '#000000' ||
-                        backgroundColor == 'black') {
-                      return {
-                        'text-decoration': 'line-through',
-                        'color': 'white', // 黑色背景时，文字颜色设置为白色
-                      };
-                    }
-                  }
-
-                  return {
-                    if (styleMap.containsKey('font-size'))
-                      'font-size': styleMap['font-size'] ?? '14px',
-                    if (styleMap.containsKey('color'))
-                      'color': styleMap['color'] ?? 'black',
-                  };
-                }
-                return null;
+                return HtmlProcess.buildCustomStyles(element);
               },
               textStyle: TextStyle(
                 fontSize: UiSizeUtil.secondCommentFontSize,

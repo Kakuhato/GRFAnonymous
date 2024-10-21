@@ -1,18 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:grfanonymous/pageRequest/loginRequest.dart';
 import 'package:grfanonymous/pageRequest/myPageRequest.dart';
-import 'package:grfanonymous/pages/loginPage.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
-import 'package:grfanonymous/ui/bottomSheet.dart';
+import 'package:grfanonymous/utils/globalKey.dart';
 import 'package:grfanonymous/utils/routeUtil.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:oktoast/oktoast.dart';
 
 import '../models/topicList.dart';
+import '../models/userData.dart';
 import '../pageRequest/likeAndFollow.dart';
 import '../pageRequest/requestUtils.dart';
 import '../ui/uiSizeUtil.dart';
+import '../utils/htmlUtil.dart';
 
 class OtherUserPage extends StatefulWidget {
   final String uid;
@@ -46,26 +48,54 @@ class _OtherUserPageState extends State<OtherUserPage>
   Future<void> _refresh() async {
     await myPageRequest.getOtherUserData(widget.uid);
     await myPageRequest.getOtherGameData(widget.uid);
-    await myPageRequest.getTopic(
+    await myPageRequest.getOwnTopic(
       onLoad: false,
       sort_type: SortType.reply,
       category_id: CategoryId.none,
-      last_tid: 0,
-      pub_time: 0,
-      reply_time: 0,
-      hot_value: 0,
       query_type: QueryType.identity,
       user_id: int.parse(widget.uid),
+    );
+    await myPageRequest.getFavorTopic(
+      onFresh: true,
+      sortType: SortType.reply,
+      categoryId: CategoryId.none,
+      queryType: QueryType.favor,
+      userId: int.parse(widget.uid),
+    );
+    await myPageRequest.getReply(
+      onFresh: true,
+      sortType: SortType.reply,
+      categoryId: CategoryId.none,
+      queryType: QueryType.favor,
+      userId: int.parse(widget.uid),
     );
     setState(() {
       _isLoading = false;
     });
   }
 
-  Future<IndicatorResult> loadData() async {
-    await myPageRequest.getTopic(
+  Future<IndicatorResult> loadOwnTopicData() async {
+    await myPageRequest.getOwnTopic(
       onLoad: true,
       user_id: int.parse(widget.uid),
+    );
+    setState(() {});
+    return IndicatorResult.success;
+  }
+
+  Future<IndicatorResult> loadFavorTopicData() async {
+    await myPageRequest.getFavorTopic(
+      onFresh: false,
+      userId: int.parse(widget.uid),
+    );
+    setState(() {});
+    return IndicatorResult.success;
+  }
+
+  Future<IndicatorResult> loadReplyData() async {
+    await myPageRequest.getReply(
+      onFresh: false,
+      userId: int.parse(widget.uid),
     );
     setState(() {});
     return IndicatorResult.success;
@@ -152,8 +182,8 @@ class _OtherUserPageState extends State<OtherUserPage>
                 controller: _tabController,
                 children: [
                   _topicList(),
-                  _buildTabContent("评论"),
-                  _buildTabContent("收藏"),
+                  _commentList(),
+                  _favorList(),
                 ],
               ),
             ),
@@ -182,17 +212,40 @@ class _OtherUserPageState extends State<OtherUserPage>
                 ),
               ),
               const Spacer(),
-              // Container(
-              //   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-              //   decoration: BoxDecoration(
-              //       borderRadius: BorderRadius.circular(30),
-              //       border: Border.all(
-              //           color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
-              //   child: const Text(
-              //     "修改个人资料",
-              //     style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
-              //   ),
-              // ),
+              GestureDetector(
+                onTap: () async {
+                  bool result =
+                      await likeAndFollow.follow(myPageRequest.userData.uid);
+                  if (result) {
+                    setState(() {
+                      myPageRequest.userData.isFollow = !myPageRequest.userData.isFollow;
+                      homeScaffoldState?.updateFollowState(myPageRequest.userData.uid, myPageRequest.userData.isFollow);
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: myPageRequest.userData.isFollow
+                          ? Colors.grey
+                          : const Color.fromRGBO(246, 153, 97, 1),
+                      width: myPageRequest.userData.isFollow ? 1 : 2,
+                    ),
+                  ),
+                  child: myPageRequest.userData.isFollow
+                      ? const Text(
+                          "已关注",
+                          style: TextStyle(color: Colors.grey),
+                        )
+                      : const Text(
+                          "+ 关注",
+                          style:
+                              TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
+                        ),
+                ),
+              ),
             ],
           ),
           const SizedBox(
@@ -440,35 +493,12 @@ class _OtherUserPageState extends State<OtherUserPage>
     );
   }
 
-  Widget _buildTabContent(String content) {
-    return EasyRefresh(
-      header: const MaterialHeader(),
-      // footer: const MaterialFooter(),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 10),
-              child: const Text(
-                "没有更多了",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Color.fromRGBO(150, 151, 153, 1),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _topicList() {
     return EasyRefresh(
       header: const MaterialHeader(),
-      onLoad: myPageRequest.nextPage
+      onLoad: myPageRequest.ownTopicListParam.nextPage
           ? () async {
-              await loadData();
+              await loadOwnTopicData();
               setState(() {});
             }
           : null,
@@ -478,12 +508,12 @@ class _OtherUserPageState extends State<OtherUserPage>
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: myPageRequest.topicList.length,
+              itemCount: myPageRequest.ownTopicList.length,
               itemBuilder: (context, index) {
-                return _topic(myPageRequest.topicList[index]);
+                return _topic(myPageRequest.ownTopicList[index]);
               },
             ),
-            if (!myPageRequest.nextPage)
+            if (!myPageRequest.ownTopicListParam.nextPage)
               Container(
                 margin: const EdgeInsets.only(top: 10, bottom: 10),
                 child: const Text(
@@ -707,10 +737,331 @@ class _OtherUserPageState extends State<OtherUserPage>
   }
 
   Widget _commentList() {
-    return Container();
+    return EasyRefresh(
+      header: const MaterialHeader(),
+      onLoad: myPageRequest.replyListParam.nextPage
+          ? () async {
+              await loadReplyData();
+              setState(() {});
+            }
+          : null,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: myPageRequest.replyList.length,
+              itemBuilder: (context, index) {
+                return _comment(myPageRequest.replyList[index]);
+              },
+            ),
+            if (!myPageRequest.replyListParam.nextPage)
+              Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 10),
+                child: const Text(
+                  "没有更多了",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color.fromRGBO(150, 151, 153, 1),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _comment(MyReply reply) {
+    return GestureDetector(
+      onTap: () {
+        RouteUtils.push(
+          context,
+          WebViewPage(
+            topicId: reply.topicId.toString(),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: 15, right: 15, left: 15),
+        color: Colors.white,
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            HtmlWidget(
+              reply.content,
+              factoryBuilder: () => MyWidgetFactory(),
+              customStylesBuilder: (element) {
+                return HtmlProcess.buildCustomStyles(element);
+              },
+              textStyle: TextStyle(
+                fontSize: UiSizeUtil.postContentFontSize,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              reply.createTime,
+              style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: UiSizeUtil.homePageTimeFontSize),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 5),
+                    padding: const EdgeInsets.only(
+                      left: 10,
+                      top: 5,
+                      bottom: 5,
+                    ),
+                    color: const Color.fromRGBO(245, 245, 245, 1),
+                    child: Text(
+                      "回复帖子：${reply.title}",
+                      style: TextStyle(
+                        fontSize: UiSizeUtil.homePageContentFontSize,
+                        color: const Color.fromRGBO(153, 156, 159, 1),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _favorList() {
-    return Container();
+    return EasyRefresh(
+      header: const MaterialHeader(),
+      onLoad: myPageRequest.favorTopicListParam.total !=
+              myPageRequest.favorTopicList.length
+          ? () async {
+              await loadFavorTopicData();
+              setState(() {});
+            }
+          : null,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: myPageRequest.favorTopicList.length,
+              itemBuilder: (context, index) {
+                return _favor(myPageRequest.favorTopicList[index]);
+              },
+            ),
+            if (myPageRequest.favorTopicListParam.total ==
+                myPageRequest.favorTopicList.length)
+              Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 10),
+                child: const Text(
+                  "没有更多了",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color.fromRGBO(150, 151, 153, 1),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _favor(Topic topic) {
+    return GestureDetector(
+      onTap: () {
+        RouteUtils.push(
+          context,
+          WebViewPage(
+            topicId: topic.topicId.toString(),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: 15, right: 15, left: 15),
+        color: Colors.white,
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                ClipOval(
+                    child: CachedNetworkImage(
+                  imageUrl: topic.userAvatar,
+                  width: UiSizeUtil.homePageAvatarSize,
+                  height: UiSizeUtil.homePageAvatarSize,
+                )),
+                const SizedBox(
+                  width: 15,
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Text(
+                        topic.userNickName,
+                        // "作者",
+                        style: TextStyle(
+                            fontSize: UiSizeUtil.homePageUserNameFontSize),
+                      ),
+                    ]),
+                    Text(
+                      topic.createTime,
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: UiSizeUtil.homePageTimeFontSize),
+                    )
+                  ],
+                ),
+                Spacer(),
+                // Container(
+                //   padding: EdgeInsets.symmetric(vertical: 2, horizontal: 5),
+                //   decoration: BoxDecoration(
+                //       borderRadius: BorderRadius.circular(3),
+                //       border: Border.all(
+                //           color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
+                //   child: const Text(
+                //     "+ 关注",
+                //     style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
+                //   ),
+                // )
+              ],
+            ),
+            Text(
+              topic.title,
+              style: TextStyle(
+                fontSize: UiSizeUtil.homePageTitleFontSize,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ), // 标题
+            Text(
+              topic.content,
+              style: TextStyle(
+                fontSize: UiSizeUtil.homePageContentFontSize,
+                color: Color.fromRGBO(153, 156, 159, 1),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ), // 内容
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                ...List.generate(topic.picList.length, (index) {
+                  double rightMargin =
+                      index == topic.picList.length - 1 ? 0 : 10;
+                  return Flexible(
+                      child: Container(
+                    constraints: const BoxConstraints(
+                      maxHeight: 260,
+                    ),
+                    margin: EdgeInsets.symmetric(vertical: 10)
+                        .add(EdgeInsets.only(right: rightMargin)),
+                    child: CachedNetworkImage(
+                      imageUrl: topic.picList[index],
+                      // width: 100,
+                      // height: 100,
+                      // fit: BoxFit.cover,
+                    ),
+                  ));
+                })
+              ],
+            ),
+            Wrap(
+              children: [
+                Container(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: const Color.fromRGBO(234, 234, 234, 1),
+                  ),
+                  child: Text(
+                    topic.categoryName,
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.tagFontSize,
+                      color: Color.fromRGBO(163, 163, 187, 1),
+                    ),
+                  ),
+                ),
+                ...List.generate(topic.themeInfo.length, (index) {
+                  return Container(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: const Color.fromRGBO(234, 234, 234, 1),
+                    ),
+                    child: Text(
+                      "#${topic.themeInfo[index].themeName}",
+                      style: TextStyle(
+                        fontSize: UiSizeUtil.tagFontSize,
+                        color: Color.fromRGBO(163, 163, 187, 1),
+                      ),
+                    ),
+                    // Row(
+                    //   children: [
+                    //
+                    //   ],
+                    // )
+                  );
+                }),
+              ],
+            ), // 话题标签
+            Row(
+              children: [
+                const Expanded(child: SizedBox()),
+                Image.asset(
+                  "assets/comments.png",
+                  width: UiSizeUtil.likeIconSize,
+                ),
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 5),
+                  child: Text(
+                    topic.commentNum.toString(),
+                    style: TextStyle(
+                      fontSize: UiSizeUtil.likeFontSize,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  width: 10,
+                ),
+                Row(
+                  children: [
+                    Image.asset(
+                      topic.isLike ? "assets/liked.png" : "assets/likes.png",
+                      width: UiSizeUtil.likeIconSize,
+                    ),
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 5),
+                      child: Text(
+                        topic.likeNum.toString(),
+                        style: TextStyle(
+                          fontSize: UiSizeUtil.likeFontSize,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ), // 评论数，点赞数
+          ],
+        ),
+      ),
+    );
   }
 }
