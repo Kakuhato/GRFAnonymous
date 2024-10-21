@@ -50,7 +50,7 @@ class _MessagePageState extends State<MessagePage>
     setState(() {});
   }
 
-  _clearAll(){
+  _clearAll() {
     for (var item in replyNotificationRequest.replyList) {
       item.isRead = true;
     }
@@ -185,7 +185,7 @@ class _MessagePageState extends State<MessagePage>
       header: const MaterialHeader(),
       // footer: const MaterialFooter(),
       onRefresh: () async {
-        _notificationListInit();
+        _notificationListInit(); //刷新
         setState(() {});
       },
       onLoad: replyNotificationRequest.replyList.length !=
@@ -325,13 +325,13 @@ class _MessagePageState extends State<MessagePage>
       header: const MaterialHeader(),
       // footer: const MaterialFooter(),
       onRefresh: () async {
-        await likeNotificationRequest.getLikeNotification(true);
+        _notificationListInit();
         setState(() {});
       },
       onLoad: likeNotificationRequest.likeList.length !=
               likeNotificationRequest.total
           ? () async {
-              _notificationListInit();
+              await likeNotificationRequest.getLikeNotification(false);
               setState(() {});
             }
           : null,
@@ -451,13 +451,13 @@ class _MessagePageState extends State<MessagePage>
       header: const MaterialHeader(),
       // footer: const MaterialFooter(),
       onRefresh: () async {
-        await followNotificationRequest.getFollowNotification(true);
+        _notificationListInit();
         setState(() {});
       },
       onLoad: followNotificationRequest.followList.length !=
               followNotificationRequest.total
           ? () async {
-              _notificationListInit();
+              await followNotificationRequest.getFollowNotification(false);
               setState(() {});
             }
           : null,
@@ -576,13 +576,13 @@ class _MessagePageState extends State<MessagePage>
       header: const MaterialHeader(),
       // footer: const MaterialFooter(),
       onRefresh: () async {
-        await infoNotificationRequest.getInfoNotification(true);
+        _notificationListInit();
         setState(() {});
       },
       onLoad: infoNotificationRequest.infoList.length !=
               infoNotificationRequest.total
           ? () async {
-              _notificationListInit();
+              await infoNotificationRequest.getInfoNotification(false);
               setState(() {});
             }
           : null,
