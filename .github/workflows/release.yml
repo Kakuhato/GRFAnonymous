@@ -125,13 +125,6 @@ jobs:
           mkdir -p /tmp/artifacts/final
           mv /tmp/artifacts/release-Android/*.apk /tmp/artifacts/final/
 
-          cd /tmp/artifacts/final
-#          for file in *; do
-#            if [ -f "$file" ]; then
-#              sha1sum "$file" | awk '{ print $1 }' > "$file.sha1"
-#            fi
-#          done
-          ls -R /tmp/artifacts/final
 
       - name: Upload to release
         uses: Robert-Stackflow/release-action@master
