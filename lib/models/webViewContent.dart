@@ -27,7 +27,7 @@ class WebViewContent {
   int userId;
   int userLevel;
   String userNickName;
-  int viewNum;
+  String viewNum;
 
   WebViewContent({
     required this.authorCommentNum,
@@ -80,7 +80,7 @@ class WebViewContent {
       isLike: json['is_like'],
       likeNum: json['like_num'],
       likeUserAvatars: List<String>.from(json['like_user_avatars']),
-      picList: List<String>.from(json['pic_list']),
+      picList: List<String>.from(json['pic_list'] ?? []),
       themeInfo: List<ThemeInfo>.from(
           json['theme_info'].map((i) => ThemeInfo.fromJson(i))),
       title: json['title'],
@@ -90,7 +90,7 @@ class WebViewContent {
       userId: json['user_id'],
       userLevel: json['user_level'],
       userNickName: json['user_nick_name'],
-      viewNum: json['view_num'],
+      viewNum: json['view_num'].toString(),
     );
   }
 

@@ -16,7 +16,7 @@ class WebViewRequest {
         .get(path: "/community/topic/$topicId", param: {
       "id": topicId,
     });
-    if (response.data != null) {
+    if (response.data["Code"] == 0) {
       // showToast(response.data['data']['comment_num'].toString());
       webViewContent = WebViewContent.fromJson(response.data['data']);
     } else {
