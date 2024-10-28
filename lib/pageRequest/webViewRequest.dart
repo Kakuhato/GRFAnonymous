@@ -84,4 +84,9 @@ class WebViewRequest {
       return false;
     }
   }
+
+  //评论
+
+  //回传detail
+
 }

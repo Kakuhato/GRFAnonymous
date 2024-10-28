@@ -26,7 +26,12 @@ class WebViewPage extends StatefulWidget {
 class _WebViewPageState extends State<WebViewPage> {
   LikeAndFollow likeAndFollow = LikeAndFollow();
   WebViewRequest webViewRequest = WebViewRequest();
+  final TextEditingController _commentController = TextEditingController();
   bool isLoading = true;
+  bool isInputActive = false;
+  String replyto = "";
+  int commentId = 0;
+  int commentSubId = 0;
 
   @override
   initState() {
@@ -157,14 +162,180 @@ class _WebViewPageState extends State<WebViewPage> {
                 ),
               ),
             ),
+            bottomNavigationBar: _bottomInputBar(),
           );
+  }
+
+  Widget _bottomInputBar() {
+    return Padding(
+      padding: MediaQuery.of(context).viewInsets, // 动态调整键盘间距
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey[200]!,
+              offset: const Offset(0, -1),
+              blurRadius: 5,
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            isInputActive
+                ? Container(
+                    // margin: const EdgeInsets.symmetric(vertical: 10.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            "    回复 @${replyto == "" ? webViewRequest.webViewContent.userNickName : replyto}："),
+                        TextField(
+                          style: const TextStyle(
+                            fontSize: 14.0, // 设置输入字体的大小
+                            color: Colors.black, // 设置字体颜色，可选
+                          ),
+                          controller: _commentController,
+                          autofocus: true, // 自动弹出键盘
+                          minLines: 1, // 最小行数为1
+                          maxLines: null, // 自动扩展高度
+                          decoration: const InputDecoration(
+                            hintText: "请输入正文",
+                            hintStyle:
+                                TextStyle(color: Colors.grey, fontSize: 14.0),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 15.0), // 添加内边距
+                          ),
+                          onSubmitted: (value) {
+                            _submitComment();
+                          },
+                        ),
+                      ],
+                    ),
+                  )
+                : GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        isInputActive = true; // 激活输入框
+                      });
+                    },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 40.0,
+                            alignment: Alignment.centerLeft,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 10.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            child: const Text(
+                              "说点什么...",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Image.asset(
+                          "assets/comments.png",
+                          width: UiSizeUtil.postCommentLikeIconSize,
+                          height: UiSizeUtil.postCommentLikeIconSize,
+                        ),
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 5),
+                          child: Text(
+                            webViewRequest.webViewContent.commentNum.toString(),
+                            style: TextStyle(
+                              fontSize: UiSizeUtil.postCommentLikeFontSize,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            if (isInputActive) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end, // 按钮靠右对齐
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        replyto = "";
+                        commentId = 0;
+                        commentSubId = 0;
+                        isInputActive = false; // 取消激活输入框
+                        _commentController.clear(); // 清空输入内容
+                      });
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 10.0),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text("取消"),
+                  ),
+                  TextButton(
+                    onPressed: _submitComment,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 10.0), // 缩小按钮的 padding
+                      minimumSize: Size.zero, // 确保按钮大小受 padding 控制
+                      tapTargetSize:
+                          MaterialTapTargetSize.shrinkWrap, // 收缩按钮点击范围
+                    ),
+                    child: const Text("提交"),
+                  ),
+                  // 增加按钮之间的间隔
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submitComment() {
+    // 处理评论提交
+    String comment = _commentController.text;
+
+    if (comment.trim().isEmpty) {
+      // 如果为空或仅包含空格和换行符，不执行提交操作
+      showToast("评论内容不能为空");
+      return;
+    }
+
+    // 获取输入内容并按自然段分割（空行分隔）
+    List<String> paragraphs = _commentController.text.split(RegExp(r'\n'));
+    // 将每个自然段转换为 <p> 标签包裹的格式
+    String htmlString =
+        paragraphs.map((paragraph) => '<p>$paragraph</p>').join();
+    showToast("$commentId + $commentSubId + $replyto");
+    // if (comment.isNotEmpty) {
+    //   _commentController.clear();
+    //   setState(() {
+    //     isInputActive = false; // 提交后恢复为未激活状态
+    //   });
+    // }
   }
 
   Widget _titleBuilder() {
     return Container(
       padding: const EdgeInsets.all(10),
       margin: const EdgeInsets.symmetric(horizontal: 10)
-          .add(EdgeInsets.only(top: 10)),
+          .add(const EdgeInsets.only(top: 10)),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -437,7 +608,7 @@ class _WebViewPageState extends State<WebViewPage> {
             ),
           ),
           // 次级回复区域
-          _secondaryReplyListBuilder(reply.commentReply),
+          _secondaryReplyListBuilder(reply.commentReply, reply.commentId),
 
           SizedBox(height: 8),
           // 点赞、评论按钮区域
@@ -481,21 +652,35 @@ class _WebViewPageState extends State<WebViewPage> {
                 ),
               ),
               const SizedBox(width: 10),
-              Image.asset(
-                "assets/comments.png",
-                width: UiSizeUtil.postCommentLikeIconSize,
-                height: UiSizeUtil.postCommentLikeIconSize,
-              ),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 5),
-                child: Text(
-                  reply.replyNum.toString(),
-                  style: TextStyle(
-                    fontSize: UiSizeUtil.postCommentLikeFontSize,
-                    color: Colors.grey,
-                  ),
+              GestureDetector(
+                onTap: () async {
+                  replyto = reply.userNickName;
+                  commentId = reply.commentId;
+                  setState(() {
+                    isInputActive = true;
+                  });
+                },
+                child: Row(
+                  children: [
+                    Image.asset(
+                      "assets/comments.png",
+                      width: UiSizeUtil.postCommentLikeIconSize,
+                      height: UiSizeUtil.postCommentLikeIconSize,
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Text(
+                        reply.replyNum.toString(),
+                        style: TextStyle(
+                          fontSize: UiSizeUtil.postCommentLikeFontSize,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
             ],
           ),
         ],
@@ -503,11 +688,13 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 
-  Widget _secondaryReplyListBuilder(List<CommentReply> commentReply) {
+  Widget _secondaryReplyListBuilder(
+      List<CommentReply> commentReply, int replyId) {
     return ListView.builder(
       itemBuilder: (context, index) {
         return _secondaryReplyBuilder(
           commentReply[index],
+          replyId,
         );
       },
       itemCount: commentReply.length,
@@ -516,7 +703,7 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 
-  Widget _secondaryReplyBuilder(CommentReply reply) {
+  Widget _secondaryReplyBuilder(CommentReply reply, int replyId) {
     return Container(
       margin: const EdgeInsets.only(left: 45),
       padding: const EdgeInsets.all(8),
@@ -632,6 +819,22 @@ class _WebViewPageState extends State<WebViewPage> {
                 style: TextStyle(
                   fontSize: UiSizeUtil.secondCommentTimeFontSize,
                   color: Colors.grey,
+                ),
+              ),
+              Spacer(),
+              GestureDetector(
+                onTap: () {
+                  replyto = reply.userNickName;
+                  commentId = replyId;
+                  commentSubId = reply.commentId;
+                  setState(() {
+                    isInputActive = true;
+                  });
+                },
+                child: Image.asset(
+                  "assets/comments.png",
+                  width: UiSizeUtil.postCommentLikeIconSize,
+                  height: UiSizeUtil.postCommentLikeIconSize,
                 ),
               ),
             ],
