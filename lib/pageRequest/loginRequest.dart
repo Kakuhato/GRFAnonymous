@@ -74,13 +74,31 @@ class LoginRequest with ChangeNotifier {
   }
 
   static Future<bool> isLogin() async {
-    Response response = await DioInstance.instance().post(
-      path: "/community/member/info",
-      data: {},
-    );
-    if (response.data["Code"] == 401 ||
-        HiveUtil.instance().getString(HiveUtil.tokenKey) != "") {
-      showToast("登录过期，请重新登录");
+    try {
+      Response response = await DioInstance.instance().post(
+        path: "/community/member/info",
+        data: {},
+      );
+
+      // 检查状态码是否为 401，或是否未设置 Token
+      if (response.statusCode == 401 ||
+          HiveUtil.instance().getString(HiveUtil.tokenKey) == "") {
+        showToast("登录过期，请重新登录");
+        return false;
+      }
+
+      // 其他处理逻辑
+      return true;
+    } on DioException catch (e) {
+      if (e.response != null && e.response!.statusCode == 401) {
+        // showToast("登录过期，请重新登录");
+        return false;
+      } else {
+        // showToast("网络错误，请稍后再试");
+        return false;
+      }
+    } catch (e) {
+      // showToast("未知错误，请稍后再试");
       return false;
     }
 
