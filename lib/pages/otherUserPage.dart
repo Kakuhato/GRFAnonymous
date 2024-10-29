@@ -55,13 +55,6 @@ class _OtherUserPageState extends State<OtherUserPage>
       query_type: QueryType.identity,
       user_id: int.parse(widget.uid),
     );
-    await myPageRequest.getFavorTopic(
-      onFresh: true,
-      sortType: SortType.reply,
-      categoryId: CategoryId.none,
-      queryType: QueryType.favor,
-      userId: int.parse(widget.uid),
-    );
     await myPageRequest.getReply(
       onFresh: true,
       sortType: SortType.reply,
@@ -69,6 +62,15 @@ class _OtherUserPageState extends State<OtherUserPage>
       queryType: QueryType.favor,
       userId: int.parse(widget.uid),
     );
+    if (myPageRequest.userData.favors != 0) {
+      await myPageRequest.getFavorTopic(
+        onFresh: true,
+        sortType: SortType.reply,
+        categoryId: CategoryId.none,
+        queryType: QueryType.favor,
+        userId: int.parse(widget.uid),
+      );
+    }
     setState(() {
       _isLoading = false;
     });
@@ -218,13 +220,17 @@ class _OtherUserPageState extends State<OtherUserPage>
                       await likeAndFollow.follow(myPageRequest.userData.uid);
                   if (result) {
                     setState(() {
-                      myPageRequest.userData.isFollow = !myPageRequest.userData.isFollow;
-                      homeScaffoldState?.updateFollowState(myPageRequest.userData.uid, myPageRequest.userData.isFollow);
+                      myPageRequest.userData.isFollow =
+                          !myPageRequest.userData.isFollow;
+                      homeScaffoldState?.updateFollowState(
+                          myPageRequest.userData.uid,
+                          myPageRequest.userData.isFollow);
                     });
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(

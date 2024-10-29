@@ -74,6 +74,16 @@ class LoginRequest with ChangeNotifier {
   }
 
   static Future<bool> isLogin() async {
+    Response response = await DioInstance.instance().post(
+      path: "/community/member/info",
+      data: {},
+    );
+    if (response.data["Code"] == 401 ||
+        HiveUtil.instance().getString(HiveUtil.tokenKey) != "") {
+      showToast("登录过期，请重新登录");
+      return false;
+    }
+
     if (HiveUtil.instance().getString(HiveUtil.tokenKey) == "") {
       return false;
     } else {

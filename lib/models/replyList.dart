@@ -2,7 +2,7 @@
 class ReplyList {
   int hotValue;
   int lastId;
-  List<ListElement> list;
+  List<SingleComment> list;
   bool nextPage;
 
   ReplyList({
@@ -13,7 +13,7 @@ class ReplyList {
   });
 }
 
-class ListElement {
+class SingleComment {
   int commentId;
   List<CommentReply> commentReply;
   String content;
@@ -35,7 +35,7 @@ class ListElement {
   String userNickName;
 
   //可能没有commentReply字段
-  ListElement({
+  SingleComment({
     required this.commentId,
     required this.commentReply,
     required this.content,
@@ -58,8 +58,8 @@ class ListElement {
   });
 
   //用下划线命名json参数,其中picList为String列表但可能为null，commentReply也可能为null
-  factory ListElement.fromJson(Map<String, dynamic> json) {
-    return ListElement(
+  factory SingleComment.fromJson(Map<String, dynamic> json) {
+    return SingleComment(
       commentId: json['comment_id'],
       commentReply: json['comment_reply'] != null
           ? List<CommentReply>.from(

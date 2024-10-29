@@ -32,6 +32,10 @@ class _WebViewPageState extends State<WebViewPage> {
   String replyto = "";
   int commentId = 0;
   int commentSubId = 0;
+  String selectedOption1 = "所有评论";
+  String selectedOption2 = "默认";
+  bool isAuther = false;
+  int sortType = 0;
 
   @override
   initState() {
@@ -46,6 +50,15 @@ class _WebViewPageState extends State<WebViewPage> {
       isLoading = false;
     });
   }
+
+  void clearComment(){
+    replyto = "";
+    commentId = 0;
+    commentSubId = 0;
+    isInputActive = false; // 取消激活输入框
+    _commentController.clear(); // 清空输入内容
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +159,7 @@ class _WebViewPageState extends State<WebViewPage> {
                   children: [
                     _titleBuilder(),
                     _contentBuilder(),
+                    _queryBuilder(),
                     _replyListBuilder(),
                     if (!webViewRequest.hasNext)
                       Container(
@@ -164,6 +178,99 @@ class _WebViewPageState extends State<WebViewPage> {
             ),
             bottomNavigationBar: _bottomInputBar(),
           );
+  }
+
+  Widget _queryBuilder() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        children: [
+          DropdownButton<String>(
+            value: selectedOption1,
+            underline: Container(),
+            dropdownColor: Colors.white,
+            items: ["所有评论", "只看楼主"]
+                .map(
+                  (String value) => DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 14.0, // 下拉选项字体大小
+                        color: Colors.black87, // 下拉选项字体颜色
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: (newValue) async {
+              if (newValue == "所有评论") {
+                isAuther = false;
+              } else {
+                isAuther = true;
+              }
+              await webViewRequest.getReplyList(widget.topicId,
+                  isAuther: isAuther, sort: sortType);
+              setState(() {
+                selectedOption1 = newValue!;
+              });
+              // showToast("已选择: $newValue");
+            },
+          ),
+          const Spacer(),
+          DropdownButton<String>(
+            value: selectedOption2,
+            underline: Container(),
+            dropdownColor: Colors.white,
+            items: ["默认", "最早", "最新"]
+                .map(
+                  (String value) => DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 14.0, // 下拉选项字体大小
+                        color: Colors.black87, // 下拉选项字体颜色
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: (newValue) async {
+              onSortOptionChanged(newValue);
+              // showToast("已选择: $newValue");
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> onSortOptionChanged(String? newValue) async {
+    if (newValue == "默认") {
+      sortType = 0;
+    } else if (newValue == "最早") {
+      sortType = 1;
+    } else {
+      sortType = 2;
+    }
+
+    // 调用 webViewRequest 方法
+    await webViewRequest.getReplyList(widget.topicId,
+        isAuther: isAuther, sort: sortType);
+
+    // 更新状态
+    setState(() {
+      selectedOption2 = newValue!;
+    });
+
+    // Optional: showToast if needed
+    // showToast("已选择: $newValue");
   }
 
   Widget _bottomInputBar() {
@@ -214,8 +321,8 @@ class _WebViewPageState extends State<WebViewPage> {
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 10.0, horizontal: 15.0), // 添加内边距
                           ),
-                          onSubmitted: (value) {
-                            _submitComment();
+                          onSubmitted: (value) async {
+                            await _submitComment();
                           },
                         ),
                       ],
@@ -271,11 +378,7 @@ class _WebViewPageState extends State<WebViewPage> {
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        replyto = "";
-                        commentId = 0;
-                        commentSubId = 0;
-                        isInputActive = false; // 取消激活输入框
-                        _commentController.clear(); // 清空输入内容
+                        clearComment();
                       });
                     },
                     style: TextButton.styleFrom(
@@ -307,7 +410,7 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 
-  void _submitComment() {
+  Future<void> _submitComment() async {
     // 处理评论提交
     String comment = _commentController.text;
 
@@ -322,7 +425,26 @@ class _WebViewPageState extends State<WebViewPage> {
     // 将每个自然段转换为 <p> 标签包裹的格式
     String htmlString =
         paragraphs.map((paragraph) => '<p>$paragraph</p>').join();
-    showToast("$commentId + $commentSubId + $replyto");
+    // showToast("$commentId + $commentSubId + $replyto");
+    if (commentId == 0) {
+      await webViewRequest.submitComment(widget.topicId, htmlString);
+      selectedOption2 = "最新";
+      onSortOptionChanged(selectedOption2);
+    } else {
+      await webViewRequest.submitComment(widget.topicId, htmlString,
+          commentId: commentId, commentSubId: commentSubId);
+      SingleComment result =
+          await webViewRequest.getCommentDetail(widget.topicId, commentId);
+      //将新的回复添加到对应的评论中
+      for (int i = 0; i < webViewRequest.replyList.length; i++) {
+        if (webViewRequest.replyList[i].commentId == commentId) {
+          webViewRequest.replyList[i].commentReply = result.commentReply;
+          break;
+        }
+      }
+    }
+    clearComment();
+    setState(() {});
     // if (comment.isNotEmpty) {
     //   _commentController.clear();
     //   setState(() {
@@ -487,7 +609,7 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 
-  Widget _replyBuilder(ListElement reply) {
+  Widget _replyBuilder(SingleComment reply) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -680,7 +802,6 @@ class _WebViewPageState extends State<WebViewPage> {
                   ],
                 ),
               ),
-
             ],
           ),
         ],
