@@ -33,9 +33,20 @@ class LikeAndFollow {
   }
 
   Future<bool> doSignIn() async {
+    // try {
+    //   Response response = await DioInstance.instance().post(
+    //     path: "/community/task/sign_in",
+    //   );
+    // }on DioException catch (e) {
+    //   print(e);
+    //   showToast((e.response!.statusCode).toString());
+    //   return false;
+    // }
+
     Response response = await DioInstance.instance().post(
       path: "/community/task/sign_in",
     );
+
     if (response.data["Code"] == 0) {
       showToast("签到成功");
       return true;

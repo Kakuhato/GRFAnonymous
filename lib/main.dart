@@ -24,9 +24,6 @@ Future<void> main() async {
   if (await LoginRequest.isLogin()) {
     page = TabPage();
   } else {
-    if(HiveUtil.instance().getString(HiveUtil.tokenKey) != ""){
-      showToast("登录过期，请重新登录");
-    }
     page = const LoginPage();
   }
   runApp(MyApp(page: page));

@@ -81,14 +81,16 @@ class LoginRequest with ChangeNotifier {
       );
 
       // 检查状态码是否为 401，或是否未设置 Token
-      if (response.statusCode == 401 ||
-          HiveUtil.instance().getString(HiveUtil.tokenKey) == "") {
-        showToast("登录过期，请重新登录");
-        return false;
+      // if (response.statusCode == 401 ||
+      //     HiveUtil.instance().getString(HiveUtil.tokenKey) == "") {
+      //   return false;
+      // }
+      if(response.data["Code"] == 0 && HiveUtil.instance().getString(HiveUtil.tokenKey) != ""){
+        return true;
       }
-
       // 其他处理逻辑
-      return true;
+      return false;
+
     } on DioException catch (e) {
       if (e.response != null && e.response!.statusCode == 401) {
         // showToast("登录过期，请重新登录");
