@@ -801,7 +801,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
           children: [
             HtmlWidget(
               reply.content,
-              factoryBuilder: () => MyWidgetFactory(),
+              factoryBuilder: () => MyWidgetFactory(context),
               customStylesBuilder: (element) {
                 return HtmlProcess.buildCustomStyles(element);
               },

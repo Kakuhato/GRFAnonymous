@@ -1,5 +1,5 @@
 name: grfanonymous
-version: 0.3.1+301
+version: 0.4.0+400
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -74,6 +74,15 @@ dependencies:
   flutter_launcher_icons: ^0.13.1
 
   waterfall_flow: ^3.0.3
+
+
+  image_gallery_saver_plus: ^3.0.5
+#  image_gallery_saver: ^2.0.3
+  photo_manager: ^3.6.1
+  flutter_cache_manager: ^3.4.1
+
+  media_store_plus: ^0.0.3
+  permission_handler: ^10.2.0
 
 
 

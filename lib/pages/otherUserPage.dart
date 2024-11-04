@@ -798,7 +798,7 @@ class _OtherUserPageState extends State<OtherUserPage>
           children: [
             HtmlWidget(
               reply.content,
-              factoryBuilder: () => MyWidgetFactory(),
+              factoryBuilder: () => MyWidgetFactory(context),
               customStylesBuilder: (element) {
                 return HtmlProcess.buildCustomStyles(element);
               },

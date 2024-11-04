@@ -583,7 +583,7 @@ class _WebViewPageState extends State<WebViewPage> {
       child: SelectionArea(
         child: HtmlWidget(
           webViewRequest.webViewContent.content,
-          factoryBuilder: () => MyWidgetFactory(),
+          factoryBuilder: () => MyWidgetFactory(context),
           customStylesBuilder: (element) {
             return HtmlProcess.buildCustomStyles(element);
           },
@@ -718,7 +718,7 @@ class _WebViewPageState extends State<WebViewPage> {
             child: SelectionArea(
               child: HtmlWidget(
                 reply.content,
-                factoryBuilder: () => MyWidgetFactory(),
+                factoryBuilder: () => MyWidgetFactory(context),
                 customStylesBuilder: (element) {
                   return HtmlProcess.buildCustomStyles(element);
                 },
@@ -922,7 +922,7 @@ class _WebViewPageState extends State<WebViewPage> {
           SelectionArea(
             child: HtmlWidget(
               reply.content,
-              factoryBuilder: () => MyWidgetFactory(),
+              factoryBuilder: () => MyWidgetFactory(context),
               customStylesBuilder: (element) {
                 return HtmlProcess.buildCustomStyles(element);
               },
