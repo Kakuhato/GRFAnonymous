@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/services.dart';
 import 'package:grfanonymous/models/replyList.dart';
 import 'package:grfanonymous/pageRequest/webViewRequest.dart';
 import 'package:grfanonymous/utils/htmlUtil.dart';
@@ -51,14 +52,13 @@ class _WebViewPageState extends State<WebViewPage> {
     });
   }
 
-  void clearComment(){
+  void clearComment() {
     replyto = "";
     commentId = 0;
     commentSubId = 0;
     isInputActive = false; // 取消激活输入框
     _commentController.clear(); // 清空输入内容
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +96,23 @@ class _WebViewPageState extends State<WebViewPage> {
                         showToast(webViewRequest.webViewContent.isFavor
                             ? "收藏成功"
                             : "取消收藏");
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.open_in_new,
+                      size: UiSizeUtil.topIconSize,
+                      color: Colors.white,
+                    ),
+                    onPressed: () async {
+                      String textToCopy =
+                          "https://gf2-bbs.sunborngame.com/share?id=${widget.topicId}"; // 你想复制的文本
+                      bool result = await likeAndFollow.share(widget.topicId);
+                      if (result) {
+                        await Clipboard.setData(
+                            ClipboardData(text: textToCopy));
+                        showToast("已复制到剪贴板"); // 可以选择显示提示信息
                       }
                     },
                   ),

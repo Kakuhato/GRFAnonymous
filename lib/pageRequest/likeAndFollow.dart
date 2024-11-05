@@ -71,4 +71,17 @@ class LikeAndFollow {
       return false;
     }
   }
+
+  Future<bool> share(String id) async {
+    Response response = await DioInstance.instance().get(
+      path: "/community/topic/share/$id",
+      param: {"id": id},
+    );
+    if (response.data != null && response.data["Code"] == 0) {
+      return true;
+    } else {
+      showToast(response.data["Message"]);
+      return false;
+    }
+  }
 }
