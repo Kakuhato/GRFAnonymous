@@ -1,5 +1,5 @@
 name: grfanonymous
-version: 0.4.1+401
+version: 0.4.2+402
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -27,6 +27,10 @@ environment:
 # dependencies can be manually updated by changing the version numbers below to
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
+dependency_overrides:
+  package_info_plus: 8.3.0
+  easy_refresh: 3.4.0
+
 dependencies:
   flutter:
     sdk: flutter
@@ -49,6 +53,7 @@ dependencies:
   #  pull_to_refresh_flutter3: ^2.0.2
   # 加密
   crypto: ^3.0.5
+  encrypt: ^5.0.3
 
   # 弹窗
   oktoast: ^3.4.0
@@ -83,6 +88,8 @@ dependencies:
 
   media_store_plus: ^0.0.3
   permission_handler: ^10.2.0
+
+  package_info_plus: 8.0.2
 
 
 
