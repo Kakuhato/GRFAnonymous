@@ -67,12 +67,20 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Flutter Clean
+        run: flutter clean
+
       # Flutter Pub Get
       - name: Flutter Pub Get
         run: |
           git config --global core.longpaths true
           flutter doctor -v
           flutter pub get
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 36
 
       # Get app version
       - name: Get app version
@@ -86,7 +94,6 @@ jobs:
       - name: Build Android
         if: matrix.target == 'Android'
         run: |
-          flutter build apk --release
           flutter build apk --release --split-per-abi
           cd build/app/outputs/flutter-apk
           mv app-release.apk GRFAnonymous-${{ steps.get_version.outputs.version }}-android-universal.apk
