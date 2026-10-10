@@ -65,6 +65,27 @@ class Topic {
   int userId;
   int userLevel;
   String userNickName;
+  // 热重载可能保留新增字段尚未初始化的旧实例，读取时统一兜底。
+  String? _avatarFrame;
+  String? _userTitle;
+  bool? _vip;
+  int? _endlessFloor;
+  int? _endlessRank;
+
+  String get avatarFrame => _avatarFrame ?? '';
+  set avatarFrame(String value) => _avatarFrame = value;
+
+  String get userTitle => _userTitle ?? '';
+  set userTitle(String value) => _userTitle = value;
+
+  bool get vip => _vip ?? false;
+  set vip(bool value) => _vip = value;
+
+  int get endlessFloor => _endlessFloor ?? 0;
+  set endlessFloor(int value) => _endlessFloor = value;
+
+  int get endlessRank => _endlessRank ?? 0;
+  set endlessRank(int value) => _endlessRank = value;
 
   Topic({
     required this.categoryId,
@@ -86,7 +107,16 @@ class Topic {
     required this.userId,
     required this.userLevel,
     required this.userNickName,
-  });
+    String avatarFrame = '',
+    String userTitle = '',
+    bool vip = false,
+    int endlessFloor = 0,
+    int endlessRank = 0,
+  })  : _avatarFrame = avatarFrame,
+        _userTitle = userTitle,
+        _vip = vip,
+        _endlessFloor = endlessFloor,
+        _endlessRank = endlessRank;
 
   //用下划线命名json参数，其中picList可能为空
   factory Topic.fromJson(Map<String, dynamic> json) {
@@ -105,13 +135,19 @@ class Topic {
       picList:
           json['pic_list'] != null ? List<String>.from(json['pic_list']) : [],
       themeInfo: List<ThemeInfo>.from(
-          json['theme_info'].map((x) => ThemeInfo.fromJson(x))),
+          (json['theme_info'] as List? ?? [])
+              .map((x) => ThemeInfo.fromJson(x))),
       title: json['title'],
       topicId: json['topic_id'],
       userAvatar: json['user_avatar'],
       userId: json['user_id'],
       userLevel: json['user_level'],
       userNickName: json['user_nick_name'],
+      avatarFrame: json['avatar_frame'] as String? ?? '',
+      userTitle: json['user_title'] as String? ?? '',
+      vip: json['vip'] == true || json['vip'] == 1 || json['vip'] == '1',
+      endlessFloor: int.tryParse('${json['endless_floor']}') ?? 0,
+      endlessRank: int.tryParse('${json['endless_rank']}') ?? 0,
     );
   }
 
@@ -137,6 +173,11 @@ class Topic {
       'user_id': userId,
       'user_level': userLevel,
       'user_nick_name': userNickName,
+      'avatar_frame': avatarFrame,
+      'user_title': userTitle,
+      'vip': vip,
+      'endless_floor': endlessFloor,
+      'endless_rank': endlessRank,
     };
   }
 

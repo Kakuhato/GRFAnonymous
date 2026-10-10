@@ -1,3 +1,4 @@
+import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:grfanonymous/pageRequest/loginRequest.dart';
@@ -646,11 +647,15 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                     ),
                     margin: EdgeInsets.symmetric(vertical: 10)
                         .add(EdgeInsets.only(right: rightMargin)),
-                    child: CachedNetworkImage(
-                      imageUrl: topic.picList[index],
-                      // width: 100,
-                      // height: 100,
-                      // fit: BoxFit.cover,
+                    child: GestureDetector(
+                      onTap: () => showImageGallery(
+                        context,
+                        images: topic.picList,
+                        initialIndex: index,
+                      ),
+                      child: CachedNetworkImage(
+                        imageUrl: topic.picList[index],
+                      ),
                     ),
                   ));
                 })
@@ -971,11 +976,15 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                     ),
                     margin: EdgeInsets.symmetric(vertical: 10)
                         .add(EdgeInsets.only(right: rightMargin)),
-                    child: CachedNetworkImage(
-                      imageUrl: topic.picList[index],
-                      // width: 100,
-                      // height: 100,
-                      // fit: BoxFit.cover,
+                    child: GestureDetector(
+                      onTap: () => showImageGallery(
+                        context,
+                        images: topic.picList,
+                        initialIndex: index,
+                      ),
+                      child: CachedNetworkImage(
+                        imageUrl: topic.picList[index],
+                      ),
                     ),
                   ));
                 })
@@ -1070,3 +1079,4 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
     );
   }
 }
+

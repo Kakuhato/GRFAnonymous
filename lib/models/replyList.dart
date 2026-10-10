@@ -13,7 +13,7 @@ class ReplyList {
   });
 }
 
-class SingleComment {
+class SingleComment with CommentAuthorInfo {
   int commentId;
   List<CommentReply> commentReply;
   String content;
@@ -82,7 +82,7 @@ class SingleComment {
       userId: json['user_id'],
       userLevel: json['user_level'],
       userNickName: json['user_nick_name'],
-    );
+    )..readAuthorJson(json);
   }
 
   Map<String, dynamic> toJson() {
@@ -106,11 +106,12 @@ class SingleComment {
       'user_id': userId,
       'user_level': userLevel,
       'user_nick_name': userNickName,
+      ...authorJson,
     };
   }
 }
 
-class CommentReply {
+class CommentReply with CommentAuthorInfo {
   int commentId;
   String content;
   String createTime;
@@ -181,7 +182,7 @@ class CommentReply {
       userId: json['user_id'],
       userLevel: json['user_level'],
       userNickName: json['user_nick_name'],
-    );
+    )..readAuthorJson(json);
   }
 
   //用下划线命名json参数
@@ -208,6 +209,38 @@ class CommentReply {
       'user_id': userId,
       'user_level': userLevel,
       'user_nick_name': userNickName,
+      ...authorJson,
     };
   }
+}
+
+/// 一级评论和楼中楼共用的可选作者信息；缺失字段不影响旧响应。
+mixin CommentAuthorInfo {
+  String? _avatarFrame;
+  String? _userTitle;
+  bool? _vip;
+  int? _endlessFloor;
+  int? _endlessRank;
+
+  String get avatarFrame => _avatarFrame ?? '';
+  String get userTitle => _userTitle ?? '';
+  bool get vip => _vip ?? false;
+  int get endlessFloor => _endlessFloor ?? 0;
+  int get endlessRank => _endlessRank ?? 0;
+
+  void readAuthorJson(Map<String, dynamic> json) {
+    _avatarFrame = json['avatar_frame']?.toString() ?? '';
+    _userTitle = json['user_title']?.toString() ?? '';
+    _vip = json['vip'] == true || json['vip'] == 1;
+    _endlessFloor = int.tryParse('${json['endless_floor']}') ?? 0;
+    _endlessRank = int.tryParse('${json['endless_rank']}') ?? 0;
+  }
+
+  Map<String, dynamic> get authorJson => {
+    'avatar_frame': avatarFrame,
+    'user_title': userTitle,
+    'vip': vip,
+    'endless_floor': endlessFloor,
+    'endless_rank': endlessRank,
+  };
 }

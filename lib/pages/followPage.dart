@@ -1,3 +1,4 @@
+import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -218,11 +219,15 @@ class _FollowPageState extends State<FollowPage> {
                     ),
                     margin: EdgeInsets.symmetric(vertical: 10)
                         .add(EdgeInsets.only(right: rightMargin)),
-                    child: CachedNetworkImage(
-                      imageUrl: topic.picList[index],
-                      // width: 100,
-                      // height: 100,
-                      // fit: BoxFit.cover,
+                    child: GestureDetector(
+                      onTap: () => showImageGallery(
+                        context,
+                        images: topic.picList,
+                        initialIndex: index,
+                      ),
+                      child: CachedNetworkImage(
+                        imageUrl: topic.picList[index],
+                      ),
                     ),
                   ));
                 })
@@ -334,3 +339,4 @@ class _FollowPageState extends State<FollowPage> {
     );
   }
 }
+

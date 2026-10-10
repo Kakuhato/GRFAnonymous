@@ -1,6 +1,6 @@
 name: Build & Release
 
-# Trigger on push to master branch or with a tag
+# Trigger on push to main branch or with an uppercase V tag (e.g. V0.4.4)
 on:
   push:
     branches:

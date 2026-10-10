@@ -1,18 +1,14 @@
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'package:html/dom.dart' as dom;
-import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
-import 'package:oktoast/oktoast.dart';
-import 'package:permission_handler/permission_handler.dart';
+
+import 'image_actions.dart';
 
 class MyWidgetFactory extends WidgetFactory {
   final BuildContext context;
-  final String albumName = "grfa";
 
   MyWidgetFactory(this.context);
 
@@ -20,94 +16,54 @@ class MyWidgetFactory extends WidgetFactory {
   Widget? buildImageWidget(BuildTree meta, ImageSource src) {
     final url = src.url;
     if (url == null) return null;
-
-    final classList = meta.element.classes ?? {};
-
-    bool isEmoji = classList.contains("emoji");
-    double? _width, _height;
-
-    if (isEmoji) {
-      _width = UiSizeUtil.emojiSize;
-      _height = UiSizeUtil.emojiSize;
-    }
-
-    // 使用 CachedNetworkImage 进行图片缓存
+    final isEmoji = meta.element.classes.contains('emoji');
     return GestureDetector(
-      onLongPress: () async {
-        // 显示保存图片的对话框
-        await showDialog(
-          context: context,
-          builder: (context) => Dialog(
-            insetPadding: EdgeInsets.symmetric(horizontal: 40), // 控制对话框的左右边距
-            child: Container(
-              width: double.infinity, // 占满对话框的宽度
-              color: Colors.grey[200], // 设置背景颜色，您可以更换为所需颜色
-              child: TextButton(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await _saveImageToAlbum(url);
-                },
-                style: TextButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(0), // 按钮圆角半径
-                  ),
-                  backgroundColor: Colors.grey[200], // 按钮背景颜色
-                  overlayColor: Colors.blueAccent.withOpacity(0.1), // 点击时的颜色
-                ),
-                child: const Text(
-                  '保存图片',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.black,
-                  ), // 调整字体颜色
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+      onTap: isEmoji ? null : () => _preview(meta.element, url),
+      onLongPress: () => ImageActions.showSaveMenu(context, url),
       child: CachedNetworkImage(
         imageUrl: url,
-        width: _width,
-        height: _height,
-        placeholder: (context, url) => const CircularProgressIndicator(),
-        errorWidget: (context, url, error) => const Icon(Icons.error),
+        width: isEmoji ? UiSizeUtil.emojiSize : null,
+        height: isEmoji ? UiSizeUtil.emojiSize : null,
+        placeholder: (_, __) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        errorWidget: (_, __, ___) => const Icon(Icons.error),
       ),
     );
   }
 
-  Future<void> _saveImageToAlbum(String url) async {
-    if (!await requestStoragePermission()) {
-      showToast("没有存储权限");
-      return;
+  void _preview(dom.Element clicked, String clickedUrl) {
+    // 每份 HTML（正文或单条评论）独立成组，按原文顺序浏览并排除表情。
+    dom.Node root = clicked;
+    while (root.parentNode != null) {
+      root = root.parentNode!;
     }
-
-    try {
-      // 下载图片并缓存
-      final cacheManager = DefaultCacheManager();
-      final file = await cacheManager.getSingleFile(url);
-      // final Uint8List imageBytes = await file.readAsBytes();
-
-      // 使用 image_gallery_saver 保存文件到 "Downloads" 目录
-      final result = await ImageGallerySaverPlus.saveFile(
-        file.path,
-        name: "grfa_${DateTime.now().millisecondsSinceEpoch}",
-        isReturnPathOfIOS: true,
-      );
-
-      if (result["isSuccess"] == true) {
-        showToast("图片已保存到相册");
-      } else {
-        showToast("保存图片失败");
+    final elements = <dom.Element>[];
+    void collectImages(dom.Node node) {
+      if (node is dom.Element && node.localName == 'img') {
+        elements.add(node);
       }
-    } catch (error) {
-      showToast("保存图片出错：$error");
+      for (final child in node.nodes) {
+        collectImages(child);
+      }
     }
-  }
-
-  Future<bool> requestStoragePermission() async {
-    var status = await Permission.storage.request();
-    return status.isGranted;
+    collectImages(root);
+    final urls = <String>[];
+    var initialIndex = -1;
+    for (final element in elements) {
+      if (element.classes.contains('emoji')) continue;
+      final source = element == clicked
+          ? clickedUrl
+          : element.attributes['src'];
+      if (source == null || source.trim().isEmpty) continue;
+      if (element == clicked) initialIndex = urls.length;
+      urls.add(source.startsWith('//') ? 'https:$source' : source);
+    }
+    if (initialIndex < 0) {
+      urls.add(clickedUrl);
+      initialIndex = urls.length - 1;
+    }
+    showImageGallery(context, images: urls, initialIndex: initialIndex);
   }
 }
 
@@ -154,3 +110,4 @@ class HtmlProcess {
     return null;
   }
 }
+
