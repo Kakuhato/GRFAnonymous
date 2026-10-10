@@ -122,6 +122,8 @@ jobs:
     name: Publish
     needs: Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -143,14 +145,32 @@ jobs:
 
 
       - name: Upload to release
-        uses: Robert-Stackflow/release-action@master
-        with:
-          tag: ${{ github.ref_name }}
-          allowUpdates: true
-          generateReleaseNotes: true
-          artifacts: /tmp/artifacts/final/*
-          artifactErrorsFailBuild: true
-          replacesArtifacts: true
-          makeLatest: true
-          draft: true
-          updateOnlyUnreleased: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          artifacts=(/tmp/artifacts/final/*.apk)
+          if (( ${#artifacts[@]} == 0 )); then
+            echo "::error::No APK files found for release upload."
+            exit 1
+          fi
+
+          if is_draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft'); then
+            if [[ "$is_draft" != "true" ]]; then
+              echo "Release $RELEASE_TAG is already published; skipping updates."
+              exit 0
+            fi
+          else
+            gh release create "$RELEASE_TAG" \
+              --verify-tag \
+              --draft \
+              --title "$RELEASE_TAG" \
+              --generate-notes
+          fi
+
+          # Preserve existing draft notes and replace only same-named APK assets.
+          gh release upload "$RELEASE_TAG" "${artifacts[@]}" --clobber
