@@ -80,7 +80,9 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 36
+          # Override v3's default packages to exclude the retired 'tools' package.
+          # Keep the installed platform aligned with android/app/build.gradle.
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
 
       # Get app version
       - name: Get app version
