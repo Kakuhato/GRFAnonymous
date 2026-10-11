@@ -9,13 +9,15 @@ class HomeTopicCard extends StatelessWidget {
     super.key,
     required this.topic,
     required this.onOpen,
-    required this.onFollow,
+    this.onFollow,
+    this.showFollowButton = true,
     required this.onLike,
   });
 
   final Topic topic;
   final VoidCallback onOpen;
-  final VoidCallback onFollow;
+  final VoidCallback? onFollow;
+  final bool showFollowButton;
   final VoidCallback onLike;
 
   @override
@@ -29,7 +31,11 @@ class HomeTopicCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            HomeTopicAuthor(topic: topic, onFollow: onFollow),
+            HomeTopicAuthor(
+              topic: topic,
+              onFollow: onFollow,
+              showFollowButton: showFollowButton,
+            ),
             const SizedBox(height: 8),
             Row(
               children: [

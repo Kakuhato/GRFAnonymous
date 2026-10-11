@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/replyList.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
+import 'topic_author_badge.dart';
 
 const _orange = Color(0xFFFF701F);
 
@@ -76,7 +77,7 @@ class CommentAuthorHeader extends StatelessWidget {
                       isAdmin: comment.isAdmin,
                     ),
                     if (comment.isAuthor)
-                      const Text('作者', style: TextStyle(color: _orange, fontSize: 12)),
+                      const TopicAuthorBadge(),
                   ],
                 ),
                 Text(

@@ -117,39 +117,38 @@ class _ImageGalleryState extends State<_ImageGallery> {
                   setState(() => _index = index);
                 },
                 itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onDoubleTap: () => _zoom(_scale > 1.01 ? 1 : 2),
-                    onLongPress: () => ImageActions.showSaveMenu(
-                      context, widget.images[index],
-                    ),
-                    child: InteractiveViewer(
-                      transformationController:
-                          index == _index ? _transform : null,
-                      minScale: 1,
-                      maxScale: 4,
-                      panEnabled: _scale > 1.01,
-                      child: SizedBox.expand(
-                        child: CachedNetworkImage(
-                          imageUrl: widget.images[index],
-                          fit: BoxFit.contain,
-                          // 点击图片本身不关闭；实际图片外的留白交给蒙版处理。
-                          imageBuilder: (context, provider) => Center(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {},
-                              child: Image(
-                                image: provider,
-                                fit: BoxFit.contain,
-                              ),
+                  return InteractiveViewer(
+                    transformationController:
+                        index == _index ? _transform : null,
+                    minScale: 1,
+                    maxScale: 4,
+                    panEnabled: _scale > 1.01,
+                    child: SizedBox.expand(
+                      child: CachedNetworkImage(
+                        imageUrl: widget.images[index],
+                        fit: BoxFit.contain,
+                        // 点击图片本身不关闭；实际图片外的留白交给蒙版处理。
+                        imageBuilder: (context, provider) => Center(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {},
+                            // 双击与长按只命中图片，避免蒙版单击等待双击判定。
+                            onDoubleTap: () => _zoom(_scale > 1.01 ? 1 : 2),
+                            onLongPress: () => ImageActions.showSaveMenu(
+                              context, widget.images[index],
+                            ),
+                            child: Image(
+                              image: provider,
+                              fit: BoxFit.contain,
                             ),
                           ),
-                          placeholder: (_, __) => const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
-                          ),
-                          errorWidget: (_, __, ___) => const Center(
-                            child: Text('图片加载失败',
-                                style: TextStyle(color: Colors.white)),
-                          ),
+                        ),
+                        placeholder: (_, __) => const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                        errorWidget: (_, __, ___) => const Center(
+                          child: Text('图片加载失败',
+                              style: TextStyle(color: Colors.white)),
                         ),
                       ),
                     ),

@@ -4,11 +4,13 @@ class HomeShortcuts extends StatelessWidget {
   const HomeShortcuts({
     super.key,
     required this.isSignedIn,
+    this.isSigningIn = false,
     required this.onSignIn,
     required this.onShop,
   });
 
   final bool isSignedIn;
+  final bool isSigningIn;
   final VoidCallback onSignIn;
   final VoidCallback onShop;
 
@@ -26,36 +28,35 @@ class HomeShortcuts extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            children: [
-              Stack(
-                children: [
-                  GestureDetector(
-                    onTap: onSignIn,
-                    child: Image.asset(
-                      isSignedIn
-                          ? 'assets/sign-in-ed.png'
-                          : 'assets/sign-in.png',
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onSignIn,
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    Image.asset(
+                      isSignedIn ? 'assets/sign-in-ed.png' : 'assets/sign-in.png',
                       height: 62,
                     ),
-                  ),
-                  if (!isSignedIn)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
+                    if (!isSignedIn && !isSigningIn)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.red, shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              const Text('签到'),
-            ],
+                  ],
+                ),
+                Text(isSignedIn ? '已签到' : isSigningIn ? '签到中…' : '签到',
+                    style: TextStyle(color: isSignedIn ? Colors.grey : null)),
+              ],
+            ),
           ),
           Column(
             children: [

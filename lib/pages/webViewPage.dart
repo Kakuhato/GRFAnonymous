@@ -1,3 +1,4 @@
+import 'widgets/topic_author_badge.dart';
 import 'widgets/topic_detail_header.dart';
 import 'widgets/topic_detail_metadata.dart';
 import 'widgets/comment_author_header.dart';
@@ -694,6 +695,8 @@ class _WebViewPageState extends State<WebViewPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: 3,
             children: [
               GestureDetector(
                 onTap: () {
@@ -717,23 +720,9 @@ class _WebViewPageState extends State<WebViewPage> {
                 isAdmin: reply.isAdmin,
               ),
               if (reply.isAuthor)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  margin: const EdgeInsets.only(left: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color.fromRGBO(242, 108, 28, 1),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    "作者",
-                    style: TextStyle(
-                      fontSize: UiSizeUtil.secondCommentUserNameFontSize,
-                      color: Color.fromRGBO(242, 108, 28, 1),
-                    ),
-                  ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: TopicAuthorBadge(),
                 ),
               if (reply.replyTo != null)
                 Container(
@@ -761,23 +750,9 @@ class _WebViewPageState extends State<WebViewPage> {
                   ),
                 ),
               if (reply.replyToUid == webViewRequest.webViewContent.userId)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  margin: const EdgeInsets.only(left: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color.fromRGBO(242, 108, 28, 1),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    "作者",
-                    style: TextStyle(
-                      fontSize: UiSizeUtil.secondCommentUserNameFontSize,
-                      color: Color.fromRGBO(242, 108, 28, 1),
-                    ),
-                  ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: TopicAuthorBadge(),
                 ),
               const Text(" ："),
             ],

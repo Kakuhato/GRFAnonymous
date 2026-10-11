@@ -8,11 +8,13 @@ class HomeTopicAuthor extends StatelessWidget {
   const HomeTopicAuthor({
     super.key,
     required this.topic,
-    required this.onFollow,
+    this.onFollow,
+    this.showFollowButton = true,
   });
 
   final Topic topic;
-  final VoidCallback onFollow;
+  final VoidCallback? onFollow;
+  final bool showFollowButton;
   static const _orange = Color(0xFFFF701F);
   static const _officialBlue = Color(0xFF46C5EF);
 
@@ -151,7 +153,7 @@ class HomeTopicAuthor extends StatelessWidget {
             ],
           ),
         ),
-        if (!topic.isAuthor) ...[
+        if (showFollowButton && !topic.isAuthor && onFollow != null) ...[
           const SizedBox(width: 8),
           GestureDetector(
             onTap: onFollow,

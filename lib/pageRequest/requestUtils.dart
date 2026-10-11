@@ -21,7 +21,11 @@ enum CategoryId {
   none(100, "没有这一栏"),
   recommend(1, "发现"),
   restroom(2, "休息室"),
-  strategy(3, "攻略");
+  strategy(3, "攻略"),
+  fanArt(7, "同人"),
+  worldview(4, "世界观"),
+  official(5, "官方"),
+  help(8, "互助厅");
 
   final int type;
   final String description;
@@ -34,7 +38,8 @@ enum QueryType {
   homepage(1, "主页"),
   favor(2, "收藏"),
   follow(3, "关注"),
-  identity(4, "我的");
+  identity(4, "我的"),
+  official(6, "官方");
 
   final int type;
   final String description;

@@ -1,9 +1,7 @@
-import 'package:grfanonymous/ui/image_gallery.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'widgets/home_topic_card.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/pageRequest/followPageRequest.dart';
-import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
 import 'package:oktoast/oktoast.dart';
 
@@ -128,215 +126,25 @@ class _FollowPageState extends State<FollowPage> {
     );
   }
 
-  //帖子
   Widget _topicBuilder(Topic topic) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtils.push(
-          context,
-          WebViewPage(
-            topicId: topic.topicId.toString(),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(top: 15, right: 15, left: 15),
-        color: Colors.white,
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                ClipOval(
-                    child: CachedNetworkImage(
-                  imageUrl: topic.userAvatar,
-                  width: UiSizeUtil.homePageAvatarSize,
-                  height: UiSizeUtil.homePageAvatarSize,
-                )),
-                const SizedBox(
-                  width: 15,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Text(
-                        topic.userNickName,
-                        // "作者",
-                        style: TextStyle(
-                            fontSize: UiSizeUtil.homePageUserNameFontSize),
-                      ),
-                    ]),
-                    Text(
-                      topic.createTime,
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: UiSizeUtil.homePageTimeFontSize),
-                    )
-                  ],
-                ),
-                Spacer(),
-                // Container(
-                //   padding: EdgeInsets.symmetric(vertical: 2, horizontal: 5),
-                //   decoration: BoxDecoration(
-                //       borderRadius: BorderRadius.circular(3),
-                //       border: Border.all(
-                //           color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
-                //   child: const Text(
-                //     "+ 关注",
-                //     style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
-                //   ),
-                // )
-              ],
-            ),
-            Text(
-              topic.title,
-              style: TextStyle(
-                fontSize: UiSizeUtil.homePageTitleFontSize,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ), // 标题
-            Text(
-              topic.content,
-              style: TextStyle(
-                fontSize: UiSizeUtil.homePageContentFontSize,
-                color: Color.fromRGBO(153, 156, 159, 1),
-              ),
-              overflow: TextOverflow.ellipsis,
-            ), // 内容
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                ...List.generate(topic.picList.length, (index) {
-                  double rightMargin =
-                      index == topic.picList.length - 1 ? 0 : 10;
-                  return Flexible(
-                      child: Container(
-                    constraints: const BoxConstraints(
-                      maxHeight: 260,
-                    ),
-                    margin: EdgeInsets.symmetric(vertical: 10)
-                        .add(EdgeInsets.only(right: rightMargin)),
-                    child: GestureDetector(
-                      onTap: () => showImageGallery(
-                        context,
-                        images: topic.picList,
-                        initialIndex: index,
-                      ),
-                      child: CachedNetworkImage(
-                        imageUrl: topic.picList[index],
-                      ),
-                    ),
-                  ));
-                })
-              ],
-            ),
-            Wrap(
-              children: [
-                Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: const Color.fromRGBO(234, 234, 234, 1),
-                  ),
-                  child: Text(
-                    topic.categoryName,
-                    style: TextStyle(
-                      fontSize: UiSizeUtil.tagFontSize,
-                      color: Color.fromRGBO(163, 163, 187, 1),
-                    ),
-                  ),
-                ),
-                ...List.generate(topic.themeInfo.length, (index) {
-                  return Container(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: const Color.fromRGBO(234, 234, 234, 1),
-                    ),
-                    child: Text(
-                      "#${topic.themeInfo[index].themeName}",
-                      style: TextStyle(
-                        fontSize: UiSizeUtil.tagFontSize,
-                        color: Color.fromRGBO(163, 163, 187, 1),
-                      ),
-                    ),
-                    // Row(
-                    //   children: [
-                    //
-                    //   ],
-                    // )
-                  );
-                }),
-              ],
-            ), // 话题标签
-            Row(
-              children: [
-                const Expanded(child: SizedBox()),
-                Image.asset(
-                  "assets/comments.png",
-                  width: UiSizeUtil.likeIconSize,
-                ),
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
-                  child: Text(
-                    topic.commentNum.toString(),
-                    style: TextStyle(
-                      fontSize: UiSizeUtil.likeFontSize,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                GestureDetector(
-                  onTap: () async {
-                    bool result =
-                        await likeAndFollow.like(topic.topicId.toString());
-                    if (result) {
-                      setState(() {
-                        topic.isLike = !topic.isLike;
-                        if (topic.isLike) {
-                          topic.likeNum++;
-                        } else {
-                          topic.likeNum--;
-                        }
-                      });
-                      showToast(topic.isLike ? "点赞成功" : "取消点赞");
-                    }
-                  },
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        topic.isLike ? "assets/liked.png" : "assets/likes.png",
-                        width: UiSizeUtil.likeIconSize,
-                      ),
-                      Container(
-                        margin: EdgeInsets.symmetric(horizontal: 5),
-                        child: Text(
-                          topic.likeNum.toString(),
-                          style: TextStyle(
-                            fontSize: UiSizeUtil.likeFontSize,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ), // 评论数，点赞数
-          ],
-        ),
+    return HomeTopicCard(
+      topic: topic,
+      showFollowButton: false,
+      onOpen: () => RouteUtils.push(
+        context,
+        WebViewPage(topicId: topic.topicId.toString()),
       ),
+      onLike: () => _like(topic),
     );
   }
-}
 
+  Future<void> _like(Topic topic) async {
+    final result = await likeAndFollow.like(topic.topicId.toString());
+    if (!result || !mounted) return;
+    setState(() {
+      topic.isLike = !topic.isLike;
+      topic.likeNum += topic.isLike ? 1 : -1;
+    });
+    showToast(topic.isLike ? '点赞成功' : '取消点赞');
+  }
+}

@@ -66,6 +66,12 @@ class Topic {
   int userLevel;
   String userNickName;
   // 热重载可能保留新增字段尚未初始化的旧实例，读取时统一兜底。
+  String? _coverPic;
+  String? _beginTime;
+  String? _endTime;
+  String get coverPic => _coverPic ?? '';
+  String get beginTime => _beginTime ?? '';
+  String get endTime => _endTime ?? '';
   String? _avatarFrame;
   String? _userTitle;
   bool? _vip;
@@ -107,12 +113,18 @@ class Topic {
     required this.userId,
     required this.userLevel,
     required this.userNickName,
+    String coverPic = '',
+    String beginTime = '',
+    String endTime = '',
     String avatarFrame = '',
     String userTitle = '',
     bool vip = false,
     int endlessFloor = 0,
     int endlessRank = 0,
-  })  : _avatarFrame = avatarFrame,
+  })  : _coverPic = coverPic,
+        _beginTime = beginTime,
+        _endTime = endTime,
+        _avatarFrame = avatarFrame,
         _userTitle = userTitle,
         _vip = vip,
         _endlessFloor = endlessFloor,
@@ -143,6 +155,9 @@ class Topic {
       userId: json['user_id'],
       userLevel: json['user_level'],
       userNickName: json['user_nick_name'],
+      coverPic: json['cover_pic']?.toString() ?? '',
+      beginTime: json['begin_time']?.toString() ?? '',
+      endTime: json['end_time']?.toString() ?? '',
       avatarFrame: json['avatar_frame'] as String? ?? '',
       userTitle: json['user_title'] as String? ?? '',
       vip: json['vip'] == true || json['vip'] == 1 || json['vip'] == '1',
@@ -173,6 +188,9 @@ class Topic {
       'user_id': userId,
       'user_level': userLevel,
       'user_nick_name': userNickName,
+      'cover_pic': coverPic,
+      'begin_time': beginTime,
+      'end_time': endTime,
       'avatar_frame': avatarFrame,
       'user_title': userTitle,
       'vip': vip,

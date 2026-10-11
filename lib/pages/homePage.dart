@@ -2,6 +2,7 @@ import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/pageRequest/homeRequest.dart';
+import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:grfanonymous/pageRequest/likeAndFollow.dart';
 import 'package:grfanonymous/pages/shopPage.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
@@ -21,6 +22,11 @@ class HomePageState extends State<HomePage> {
   final HomePageRequest homePageRequest = HomePageRequest();
   final LikeAndFollow likeAndFollow = LikeAndFollow();
   bool _isSigningIn = false;
+  bool _isFeedBusy = false;
+  bool _isSwitchingCategory = false;
+  CategoryId _category = CategoryId.recommend;
+  SortType _sort = SortType.reply;
+  int _officialSubId = 1;
 
   @override
   void initState() {
@@ -29,20 +35,33 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<IndicatorResult> refreshData() async {
+    if (_isFeedBusy) return IndicatorResult.fail;
+    _isFeedBusy = true;
     try {
-      await homePageRequest.getBanner();
-      await homePageRequest.getTopic();
-      await likeAndFollow.getSignInStatus();
+      await Future.wait<void>([
+        () async {
+          await homePageRequest.getBanner();
+          await homePageRequest.getTopic(category_id: _category,
+              sort_type: _sort, category_sub_id: _officialSubId);
+        }(),
+        () async {
+          await likeAndFollow.getSignInStatus();
+          if (mounted) setState(() {});
+        }(),
+      ]);
       return IndicatorResult.success;
     } catch (_) {
       return IndicatorResult.fail;
     } finally {
+      _isFeedBusy = false;
       if (mounted) setState(() {});
     }
   }
 
   Future<IndicatorResult> loadData() async {
+    if (_isFeedBusy) return IndicatorResult.fail;
     if (!homePageRequest.nextPage) return IndicatorResult.noMore;
+    _isFeedBusy = true;
     try {
       await homePageRequest.getTopic(onLoad: true);
       if (mounted) setState(() {});
@@ -51,20 +70,59 @@ class HomePageState extends State<HomePage> {
           : IndicatorResult.noMore;
     } catch (_) {
       return IndicatorResult.fail;
+    } finally {
+      _isFeedBusy = false;
+    }
+  }
+
+  Future<void> _selectCategory(CategoryId category) async {
+    if (category == _category) return;
+    await _changeFeed(category: category, subId: 1);
+  }
+
+  Future<void> _changeFeed({CategoryId? category, SortType? sort, int? subId}) async {
+    if (_isFeedBusy) {
+      showToast('正在加载，请稍后切换');
+      return;
+    }
+    final targetCategory = category ?? _category;
+    final targetSort = sort ?? _sort;
+    final targetSubId = subId ?? _officialSubId;
+    if (targetCategory == _category && targetSort == _sort &&
+        targetSubId == _officialSubId) return;
+    _isFeedBusy = true;
+    setState(() => _isSwitchingCategory = true);
+    try {
+      await homePageRequest.getTopic(category_id: targetCategory,
+          sort_type: targetSort, category_sub_id: targetSubId);
+      if (mounted) setState(() {
+        _category = targetCategory;
+        _sort = targetSort;
+        _officialSubId = targetSubId;
+      });
+    } catch (_) {
+      if (mounted) showToast('列表加载失败，请重试');
+    } finally {
+      _isFeedBusy = false;
+      if (mounted) setState(() => _isSwitchingCategory = false);
     }
   }
 
   Future<void> _signIn() async {
-    if (_isSigningIn || likeAndFollow.isSignIn) return;
-    _isSigningIn = true;
+    if (likeAndFollow.isSignIn) {
+      showToast('今日已签到');
+      return;
+    }
+    if (_isSigningIn) return;
+    setState(() => _isSigningIn = true);
     try {
       final signedIn = await likeAndFollow.doSignIn();
       if (!mounted) return;
-      setState(() => likeAndFollow.isSignIn = signedIn);
+      if (signedIn) setState(() {});
     } catch (_) {
       if (mounted) showToast('签到失败，请重试');
     } finally {
-      _isSigningIn = false;
+      if (mounted) setState(() => _isSigningIn = false);
     }
   }
 
@@ -114,9 +172,21 @@ class HomePageState extends State<HomePage> {
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
       body: HomeFeed(
+        category: _category,
+        sort: _sort,
+        officialSubId: _officialSubId,
+        onSortSelected: (sort) => _changeFeed(sort: sort),
+        onOfficialSubSelected: (subId) => _changeFeed(subId: subId),
+        onCategorySelected: _selectCategory,
+        isSwitchingCategory: _isSwitchingCategory,
         banners: homePageRequest.bannerList,
         topics: homePageRequest.topicList,
+        announcements: homePageRequest.topTopics,
+        onOpenAnnouncement: (topicId) => RouteUtils.push(
+          context, WebViewPage(topicId: topicId.toString()),
+        ),
         isSignedIn: likeAndFollow.isSignIn,
+        isSigningIn: _isSigningIn,
         onRefresh: refreshData,
         onLoad: loadData,
         onSignIn: _signIn,
