@@ -372,128 +372,114 @@ class _OtherUserPageState extends State<OtherUserPage>
   }
 
   Widget _gameInfo() {
-    return Container(
-      constraints: const BoxConstraints(
-        maxWidth: 200,
-        minWidth: 200,
-      ),
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      child: Center(
-        child: Stack(
-          children: [
-            // 背景图片
-            Container(
-              constraints: const BoxConstraints(
-                maxWidth: 350,
-                // minWidth: 200,
-              ),
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(
-                      "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png"), // 动态背景图片
-                  fit: BoxFit.fitWidth,
+    // 使用原图比例布局；文字和头像与背景一起缩放，避免固定宽度裁切。
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: AspectRatio(
+        aspectRatio: 1380 / 568,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: 460,
+            height: 568 / 3,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl:
+                      "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png",
+                  fit: BoxFit.contain,
                 ),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(
-                    height: 45,
-                  ),
-                  Container(
-                    // margin: const EdgeInsets.symmetric(vertical: 20),
-                    padding: const EdgeInsets.only(bottom: 20, left: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            // 头像
-                            CachedNetworkImage(
-                              imageUrl:
-                                  myPageRequest.gameData.userInfo.avatar == ""
-                                      ? myPageRequest.userData.avatar
-                                      : myPageRequest
-                                          .gameData.userInfo.avatar, // 动态头像图片
-                              height: 40,
-                              width: 40,
-                              fit: BoxFit.cover,
-                            ),
-                            const SizedBox(width: 12),
-                            // 用户名和等级
-                            Column(
+                Positioned(
+                  left: 20,
+                  top: 45,
+                  width: 270,
+                  bottom: 12,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: myPageRequest.gameData.userInfo.avatar.isEmpty
+                                ? myPageRequest.userData.avatar
+                                : myPageRequest.gameData.userInfo.avatar,
+                            height: 40,
+                            width: 40,
+                            fit: BoxFit.cover,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  myPageRequest
-                                      .gameData.userInfo.nickName, // 用户名
+                                  myPageRequest.gameData.userInfo.nickName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize:
-                                        UiSizeUtil.gameInfoCardUserNameFontSize,
+                                    fontSize: UiSizeUtil.gameInfoCardUserNameFontSize,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
-                                  "${myPageRequest.gameData.userInfo.level}级", // 等级
+                                  '${myPageRequest.gameData.userInfo.level}级',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize:
-                                        UiSizeUtil.gameInfoCardLevelFontSize,
+                                    fontSize: UiSizeUtil.gameInfoCardLevelFontSize,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // 主线进度、收集数和里程碑
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
                           children: [
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.mainStage,
-                                "主线进度"),
+                                myPageRequest.gameData.baseInfo.mainStage, '主线进度'),
+                            const SizedBox(width: 16),
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.heroCount
-                                    .toString(),
-                                "人形收集"),
+                                myPageRequest.gameData.baseInfo.heroCount.toString(), '人形收集'),
+                            const SizedBox(width: 16),
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.achievementCount
-                                    .toString(),
-                                "里程碑"),
-                            SizedBox(
-                              width: 80,
-                            ),
+                                myPageRequest.gameData.baseInfo.achievementCount.toString(), '里程碑'),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildInfoText(String value, String label) {
+    // 资料卡以 460 宽为基准整体缩放，统计字号需预留手机端缩小的余量。
     return Column(
       children: [
         Text(
           value == "-1" ? "-" : value,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: UiSizeUtil.gameInfoCardUserNameFontSize,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: UiSizeUtil.gameInfoCardLevelFontSize,
+            fontSize: 20,
           ),
         ),
       ],

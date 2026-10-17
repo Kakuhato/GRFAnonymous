@@ -1,3 +1,4 @@
+import 'game_data_page.dart';
 import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -177,41 +178,50 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
               headerSliverBuilder:
                   (BuildContext context, bool innerBoxIsScrolled) => [
                 SliverToBoxAdapter(
-                  child: Stack(
-                    alignment: Alignment.topCenter,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        constraints: const BoxConstraints(
-                          // maxWidth: 500,
-                          maxHeight: 200,
-                          minHeight: 200,
-                        ),
-                        child: CachedNetworkImage(
-                          imageUrl:
-                              "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      _profileBuilder(),
-                      Positioned(
-                        top: 120,
-                        left: 40,
-                        child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: myPageRequest.userData.avatar,
-                            fit: BoxFit.cover,
-                            width: UiSizeUtil.userAvatarSize,
-                            height: UiSizeUtil.userAvatarSize,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // 背景原图 750 × 377，头像和资料随背景高度定位。
+                      final backgroundHeight =
+                          (constraints.maxWidth - 20) * 377 / 750;
+                      final profileTop = backgroundHeight - 40;
+                      return Stack(
+                        alignment: Alignment.topCenter,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: AspectRatio(
+                              aspectRatio: 750 / 377,
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
+                                fit: BoxFit.contain,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                          _profileBuilder(profileTop),
+                          Positioned(
+                            top: profileTop - UiSizeUtil.userAvatarSize / 2,
+                            left: 40,
+                            child: ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl: myPageRequest.userData.avatar,
+                                fit: BoxFit.cover,
+                                width: UiSizeUtil.userAvatarSize,
+                                height: UiSizeUtil.userAvatarSize,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 SliverToBoxAdapter(
-                  child: _gameInfo(), //导航栏
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => RouteUtils.push(context, const GameDataPage()),
+                    child: _gameInfo(),
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: Container(
@@ -243,19 +253,22 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
     );
   }
 
-  Widget _profileBuilder() {
+  Widget _profileBuilder(double top) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 20)
-          .add(const EdgeInsets.only(top: 160)),
+          .add(EdgeInsets.only(top: top)),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       decoration: const BoxDecoration(
         color: Colors.white,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //用户名 个人资料
-          Row(
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 myPageRequest.userData.nickName,
@@ -264,25 +277,37 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                   fontSize: UiSizeUtil.userUserNameFontSize,
                 ),
               ),
-              const Spacer(),
-              // Container(
-              //   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-              //   decoration: BoxDecoration(
-              //       borderRadius: BorderRadius.circular(30),
-              //       border: Border.all(
-              //           color: Color.fromRGBO(246, 153, 97, 1), width: 2)),
-              //   child: const Text(
-              //     "修改个人资料",
-              //     style: TextStyle(color: Color.fromRGBO(246, 153, 97, 1)),
-              //   ),
-              // ),
+              if (myPageRequest.userData.endlessRank > 0)
+                Tooltip(
+                  message: '无尽模式排名：${myPageRequest.userData.endlessRank}',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE9EBED),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.military_tech,
+                            size: 14, color: Color(0xFF8B8070)),
+                        Text(
+                          '${myPageRequest.userData.endlessFloor < 0 ? 0 : myPageRequest.userData.endlessFloor}层',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(
             height: 10,
           ),
           //ip属地，社区id
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 4,
             children: [
               Text(
                 "ip属地：${myPageRequest.userData.ipLocation}",
@@ -291,7 +316,6 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                   fontSize: UiSizeUtil.userIdFontSize,
                 ),
               ),
-              const Spacer(),
               Text(
                 "社区ID：${myPageRequest.userData.uid}",
                 style: TextStyle(
@@ -309,15 +333,19 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
 
   Widget _fansAndFollow() {
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
       decoration: const BoxDecoration(
         color: Color.fromRGBO(242, 242, 242, 1),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Wrap(
+        alignment: WrapAlignment.spaceAround,
+        spacing: 12,
+        runSpacing: 8,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 myPageRequest.userData.fans.toString(),
@@ -336,6 +364,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
             ],
           ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 myPageRequest.userData.follows.toString(),
@@ -354,6 +383,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
             ],
           ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 myPageRequest.userData.likes,
@@ -372,6 +402,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
             ],
           ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 myPageRequest.userData.favors.toString(),
@@ -395,125 +426,112 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
   }
 
   Widget _gameInfo() {
-    return Container(
-      constraints: const BoxConstraints(
-        maxWidth: 200,
-        minWidth: 200,
-      ),
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      child: Center(
-        child: Stack(
-          children: [
-            // 背景图片
-            Container(
-              constraints: const BoxConstraints(
-                maxWidth: 350,
-                // minWidth: 200,
-              ),
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(
-                      "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png"), // 动态背景图片
-                  fit: BoxFit.fitWidth,
+    // 使用原图比例布局；文字和头像与背景一起缩放，避免固定宽度裁切。
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: AspectRatio(
+        aspectRatio: 1380 / 568,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: 460,
+            height: 568 / 3,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl:
+                      "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png",
+                  fit: BoxFit.contain,
                 ),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(
-                    height: 45,
-                  ),
-                  Container(
-                    // margin: const EdgeInsets.symmetric(vertical: 20),
-                    padding: const EdgeInsets.only(bottom: 20, left: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            // 头像
-                            CachedNetworkImage(
-                              imageUrl: myPageRequest
-                                  .gameData.userInfo.avatar, // 动态头像图片
-                              height: 40,
-                              width: 40,
-                              fit: BoxFit.cover,
-                            ),
-                            const SizedBox(width: 12),
-                            // 用户名和等级
-                            Column(
+                Positioned(
+                  left: 20,
+                  top: 32,
+                  width: 270,
+                  bottom: 12,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: myPageRequest.gameData.userInfo.avatar,
+                            height: 60,
+                            width: 60,
+                            fit: BoxFit.cover,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  myPageRequest
-                                      .gameData.userInfo.nickName, // 用户名
+                                  myPageRequest.gameData.userInfo.nickName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize:
-                                        UiSizeUtil.gameInfoCardUserNameFontSize,
+                                    fontSize: UiSizeUtil.gameInfoCardUserNameFontSize,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
-                                  "${myPageRequest.gameData.userInfo.level}级", // 等级
+                                  '${myPageRequest.gameData.userInfo.level}级',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize:
-                                        UiSizeUtil.gameInfoCardLevelFontSize,
+                                    fontSize: UiSizeUtil.gameInfoCardLevelFontSize,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // 主线进度、收集数和里程碑
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
                           children: [
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.mainStage,
-                                "主线进度"),
+                                myPageRequest.gameData.baseInfo.mainStage, '主线进度'),
+                            const SizedBox(width: 16),
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.heroCount
-                                    .toString(),
-                                "人形收集"),
+                                myPageRequest.gameData.baseInfo.heroCount.toString(), '人形收集'),
+                            const SizedBox(width: 16),
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.achievementCount
-                                    .toString(),
-                                "里程碑"),
-                            SizedBox(
-                              width: 80,
-                            ),
+                                myPageRequest.gameData.baseInfo.achievementCount.toString(), '里程碑'),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildInfoText(String value, String label) {
+    // 资料卡以 460 宽为基准整体缩放，统计字号需预留手机端缩小的余量。
     return Column(
       children: [
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: UiSizeUtil.gameInfoCardUserNameFontSize,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
-            fontSize: UiSizeUtil.gameInfoCardLevelFontSize,
+            fontSize: 20,
           ),
         ),
       ],

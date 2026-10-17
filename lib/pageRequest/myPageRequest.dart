@@ -62,14 +62,22 @@ class MyPageRequest {
     }
   }
 
-  Future getGameData() async {
-    Response response = await DioInstance.instance().post(
+  Future<GameData> fetchGameData() async {
+    final response = await DioInstance.instance().post(
       path: "/community/game/info",
       data: {},
     );
-    if (response.data != null && response.data['Code'] == 0) {
-      gameData = GameData.fromJson(response.data['data']);
-    } else {
+    final body = response.data;
+    if (body is! Map || body['Code'] != 0 || body['data'] is! Map) {
+      throw Exception('游戏信息获取失败');
+    }
+    return GameData.fromJson(Map<String, dynamic>.from(body['data']));
+  }
+
+  Future getGameData() async {
+    try {
+      gameData = await fetchGameData();
+    } catch (_) {
       showToast("游戏信息获取失败");
     }
   }

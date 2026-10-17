@@ -34,7 +34,7 @@ class HomeBanner extends StatelessWidget {
                 height: 150,
                 child: CachedNetworkImage(
                   imageUrl: banners[index].imgAddr,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

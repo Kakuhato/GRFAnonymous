@@ -27,6 +27,11 @@ class UserData {
   bool showGame;
   String signature;
   int uid;
+  int? _endlessFloor;
+  int? _endlessRank;
+
+  int get endlessFloor => _endlessFloor ?? 0;
+  int get endlessRank => _endlessRank ?? 0;
 
   UserData({
     required this.authLock,
@@ -54,7 +59,10 @@ class UserData {
     required this.showGame,
     required this.signature,
     required this.uid,
-  });
+    int endlessFloor = 0,
+    int endlessRank = 0,
+  }) : _endlessFloor = endlessFloor,
+       _endlessRank = endlessRank;
 
   //下划线命名json
   factory UserData.fromJson(Map<String, dynamic> json) {
@@ -84,6 +92,8 @@ class UserData {
       showGame: json['show_game'],
       signature: json['signature'],
       uid: json['uid'],
+      endlessFloor: int.tryParse('${json['endless_floor']}') ?? 0,
+      endlessRank: int.tryParse('${json['endless_rank']}') ?? 0,
     );
   }
 
@@ -114,6 +124,8 @@ class UserData {
       'show_game': showGame,
       'signature': signature,
       'uid': uid,
+      'endless_floor': endlessFloor,
+      'endless_rank': endlessRank,
     };
   }
 }
@@ -138,13 +150,13 @@ class GameData {
   factory GameData.fromJson(Map<String, dynamic> json) {
     return GameData(
       baseInfo: BaseInfo.fromJson(json['base_info'] ?? {}),
-      heroList: (json['hero_list'] as List)
-              .map((i) => HeroList.fromJson(i))
+      heroList: (json['hero_list'] as List?)
+              ?.map((i) => HeroList.fromJson(i))
               .toList() ??
           [],
       stageInfo: StageInfo.fromJson(json['stage_info'] ?? {}),
-      themeInfo: (json['theme_info'] as List)
-              .map((i) => ThemeInfo.fromJson(i))
+      themeInfo: (json['theme_info'] as List?)
+              ?.map((i) => ThemeInfo.fromJson(i))
               .toList() ??
           [],
       userInfo: UserInfo.fromJson(json['user_info'] ?? {}),
@@ -218,6 +230,9 @@ class BaseInfo {
 
 class HeroList {
   int duty;
+  int? _grade;
+
+  int get grade => _grade ?? 0;
   int id;
   int lv;
   String name;
@@ -235,12 +250,14 @@ class HeroList {
     required this.serialId,
     required this.showPic,
     required this.skin,
-  });
+    int grade = 0,
+  }) : _grade = grade;
 
   //下划线命名json，可能传入{
   factory HeroList.fromJson(Map<String, dynamic> json) {
     return HeroList(
       duty: json['duty'] ?? 0,
+      grade: int.tryParse('${json['grade']}') ?? 0,
       id: json['id'] ?? 0,
       lv: json['lv'] ?? 0,
       name: json['name'] ?? "",
@@ -254,6 +271,7 @@ class HeroList {
   Map<String, dynamic> toJson() {
     return {
       'duty': duty,
+      'grade': grade,
       'id': id,
       'lv': lv,
       'name': name,
@@ -265,22 +283,60 @@ class HeroList {
   }
 }
 
+class GameStageEntry {
+  final String key;
+  final String name;
+  final String image;
+  final String detail;
+
+  const GameStageEntry(this.key, this.name, this.image, this.detail);
+
+  factory GameStageEntry.fromJson(String key, Map<String, dynamic> json) {
+    final parts = <String>[
+      if ('${json['stage_name'] ?? ''}'.isNotEmpty) '${json['stage_name']}',
+      if ('${json['stage_code'] ?? ''}'.isNotEmpty) '${json['stage_code']}',
+      if (json['complete_percent'] != null)
+        // 此字段在无尽模式中为层数，在部分玩法中为积分，并非均为百分比。
+        '${json['complete_percent']}${key == 'tower_stage' ? '%' : key == 'endless_tower' ? '层' : ''}',
+      if (json['max_score'] != null) '最高分：${json['max_score']}',
+    ];
+    return GameStageEntry(key, '${json['name'] ?? ''}',
+        '${json['show_pic'] ?? ''}', parts.join(' · '));
+  }
+}
+
 class StageInfo {
   KuobianStage kuobianStage;
   TowerStage towerStage;
   WeekCommon weekCommon;
   List<WeekSpecial> weekSpecial;
+  Map<String, dynamic>? _rawStages;
+
+  List<GameStageEntry> get entries {
+    final result = <GameStageEntry>[];
+    for (final entry in (_rawStages ?? <String, dynamic>{}).entries) {
+      final values = entry.value is List ? entry.value as List : [entry.value];
+      for (final value in values) {
+        if (value is Map<String, dynamic> && value.isNotEmpty) {
+          result.add(GameStageEntry.fromJson(entry.key, value));
+        }
+      }
+    }
+    return result;
+  }
 
   StageInfo({
     required this.kuobianStage,
     required this.towerStage,
     required this.weekCommon,
     required this.weekSpecial,
-  });
+    Map<String, dynamic>? rawStages,
+  }) : _rawStages = rawStages;
 
   //下划线命名json，可能传入{}，传入weekSpecial的可能为null,json['week_special'] as List可能为null
   factory StageInfo.fromJson(Map<String, dynamic> json) {
     return StageInfo(
+      rawStages: Map<String, dynamic>.from(json),
       kuobianStage: KuobianStage.fromJson(json['kuobian_stage'] ?? {}),
       towerStage: TowerStage.fromJson(json['tower_stage'] ?? {}),
       weekCommon: WeekCommon.fromJson(json['week_common'] ?? {}),
@@ -293,6 +349,7 @@ class StageInfo {
 
   Map<String, dynamic> toJson() {
     return {
+      ...?_rawStages,
       'kuobian_stage': kuobianStage.toJson(),
       'tower_stage': towerStage.toJson(),
       'week_common': weekCommon.toJson(),
