@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/webViewContent.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
+import 'topic_identity_badge.dart';
 
 class TopicDetailHeader extends StatelessWidget {
   const TopicDetailHeader({
@@ -66,9 +67,12 @@ class TopicDetailHeader extends StatelessWidget {
                               Positioned(
                                 bottom: 0,
                                 right: 0,
-                                child: Icon(Icons.verified, size: 16,
-                                    color: topic.isAdmin
-                                        ? const Color(0xFF46C5EF) : _orange),
+                                child: Image.asset(
+                                  'assets/certificateBadge.png',
+                                  width: 16,
+                                  height: 16,
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                           ],
                         ),
@@ -88,13 +92,7 @@ class TopicDetailHeader extends StatelessWidget {
                                       fontSize: UiSizeUtil.postUserNameFontSize,
                                       fontWeight: FontWeight.w600,
                                     )),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                                  color: _orange,
-                                  child: Text('lv.${topic.userLevel}',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 12)),
-                                ),
+                                TopicLevelBadge(level: topic.userLevel),
                                 if (topic.endlessRank > 0)
                                   Tooltip(
                                     message: '无尽模式排名：${topic.endlessRank}',

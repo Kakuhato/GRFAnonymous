@@ -34,6 +34,7 @@ class HomeFeed extends StatefulWidget {
     required this.onLoad,
     required this.onSignIn,
     required this.onShop,
+    required this.onGameData,
     required this.onOpenTopic,
     required this.onFollow,
     required this.onLike,
@@ -56,6 +57,7 @@ class HomeFeed extends StatefulWidget {
   final Future<IndicatorResult> Function() onLoad;
   final VoidCallback onSignIn;
   final VoidCallback onShop;
+  final VoidCallback onGameData;
   final ValueChanged<Topic> onOpenTopic;
   final ValueChanged<Topic> onFollow;
   final ValueChanged<Topic> onLike;
@@ -130,6 +132,7 @@ class _HomeFeedState extends State<HomeFeed> {
                   isSigningIn: widget.isSigningIn,
                   onSignIn: widget.onSignIn,
                   onShop: widget.onShop,
+                  onGameData: widget.onGameData,
                 ),
               ),
               SliverPersistentHeader(

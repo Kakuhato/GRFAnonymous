@@ -5,6 +5,8 @@ import 'package:grfanonymous/pageRequest/homeRequest.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:grfanonymous/pageRequest/likeAndFollow.dart';
 import 'package:grfanonymous/pages/shopPage.dart';
+import 'search_page.dart';
+import 'game_data_page.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
 import 'package:grfanonymous/pages/widgets/home_feed.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
@@ -160,7 +162,8 @@ class HomePageState extends State<HomePage> {
           ),
           actions: [
             IconButton(
-              onPressed: () {},
+              tooltip: '搜索',
+              onPressed: () => RouteUtils.push(context, const SearchPage()),
               icon: Icon(
                 Icons.search,
                 color: Colors.white,
@@ -191,6 +194,7 @@ class HomePageState extends State<HomePage> {
         onLoad: loadData,
         onSignIn: _signIn,
         onShop: () => RouteUtils.push(context, const ShopPage()),
+        onGameData: () => RouteUtils.push(context, const GameDataPage()),
         onOpenTopic: (topic) => RouteUtils.push(
           context,
           WebViewPage(topicId: topic.topicId.toString()),

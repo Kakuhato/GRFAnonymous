@@ -4,28 +4,49 @@ import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 import 'package:oktoast/oktoast.dart';
 
+class TopicRequestException implements Exception {
+  const TopicRequestException(this.message);
+  final String message;
+}
+
 class WebViewRequest {
   late WebViewContent webViewContent;
   List<SingleComment> replyList = [];
   int _lastId = 0;
   bool _isLoading = false;
   int _sort = 0;
-  late bool hasNext;
+  bool hasNext = false;
 
-  Future getWebViewContent(String topicId) async {
-    Response response = await DioInstance.instance()
-        .get(path: "/community/topic/$topicId", param: {
-      "id": topicId,
-    });
-    if (response.data["Code"] == 0) {
-      // showToast(response.data['data']['comment_num'].toString());
-      webViewContent = WebViewContent.fromJson(response.data['data']);
-    } else {
-      showToast("帖子信息获取失败");
+  Future<void> getWebViewContent(String topicId) async {
+    try {
+      final response = await DioInstance.instance().get(
+        path: '/community/topic/$topicId', param: {'id': topicId},
+      );
+      final body = response.data;
+      if (body is! Map) throw const TopicRequestException('帖子响应异常，请重试');
+      if ('${body['Code']}' == '20005') {
+        throw const TopicRequestException('帖子不存在或已删除');
+      }
+      if ('${body['Code']}' != '0') {
+        throw TopicRequestException(body['Message']?.toString() ?? '帖子加载失败，请重试');
+      }
+      final data = body['data'];
+      if (data is! Map || '${data['topic_id']}' != topicId) {
+        throw const TopicRequestException('帖子数据异常，请重试');
+      }
+      webViewContent = WebViewContent.fromJson(Map<String, dynamic>.from(data));
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) {
+        throw const TopicRequestException('帖子不存在或已删除');
+      }
+      if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
+        throw const TopicRequestException('无法查看帖子，请登录后重试');
+      }
+      throw const TopicRequestException('帖子加载失败，请检查网络后重试');
     }
   }
 
-  Future getReplyList(
+  Future<void> getReplyList(
     String topicId, {
     int lastId = 0,
     bool isInit = true,
@@ -34,31 +55,39 @@ class WebViewRequest {
   }) async {
     if (_isLoading) return;
     _isLoading = true;
-    Response response = await DioInstance.instance().post(
-      path: "/community/comment/list",
-      data: {
-        "topic_id": int.tryParse(topicId),
-        "sort": (isInit) ? sort : _sort,
-        "last_id": isInit ? lastId : _lastId,
-        "only_author": isAuther,
-      },
-    );
-    if (response.data != null) {
-      _lastId = response.data['data']['last_id'];
-      hasNext = response.data['data']['next_page'];
-      var list = response.data['data']['list'] as List;
-      _sort = sort;
-
-      if (!isInit) {
-        replyList.addAll(list.map((i) => SingleComment.fromJson(i)).toList());
-      } else {
-        replyList = list.map((i) => SingleComment.fromJson(i)).toList();
+    try {
+      final response = await DioInstance.instance().post(
+        path: '/community/comment/list',
+        data: {
+          'topic_id': int.tryParse(topicId),
+          'sort': isInit ? sort : _sort,
+          'last_id': isInit ? lastId : _lastId,
+          'only_author': isAuther,
+        },
+      );
+      final body = response.data;
+      if (body is! Map) throw const TopicRequestException('评论响应异常，请重试');
+      if ('${body['Code']}' != '0') {
+        throw TopicRequestException(body['Message']?.toString() ?? '评论加载失败，请重试');
       }
-    } else {
-      replyList = [];
-      showToast("评论信息获取失败");
+      final data = body['data'];
+      if (data is! Map || data['list'] is! List) {
+        throw const TopicRequestException('评论数据异常，请重试');
+      }
+      final comments = (data['list'] as List)
+          .map((item) => SingleComment.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+      if (isInit) {
+        replyList = comments;
+        _sort = sort;
+      } else {
+        replyList.addAll(comments);
+      }
+      _lastId = int.tryParse('${data['last_id']}') ?? 0;
+      hasNext = data['next_page'] == true || data['next_page'] == 1;
+    } finally {
+      // 网络异常、业务错误和解析失败都必须释放加载锁，才能重试。
+      _isLoading = false;
     }
-    _isLoading = false;
   }
 
   Future<bool> likeComment(String topicId, int commentId) async {

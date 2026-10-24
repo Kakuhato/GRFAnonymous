@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/replyList.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'topic_author_badge.dart';
+import 'topic_identity_badge.dart';
 
 const _orange = Color(0xFFFF701F);
 
@@ -53,8 +54,12 @@ class CommentAuthorHeader extends StatelessWidget {
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: Icon(Icons.verified, size: 14,
-                        color: comment.isAdmin ? Colors.lightBlue : _orange),
+                    child: Image.asset(
+                      'assets/certificateBadge.png',
+                      width: 14,
+                      height: 14,
+                      fit: BoxFit.contain,
+                    ),
                   ),
               ],
             ),
@@ -93,7 +98,7 @@ class CommentAuthorHeader extends StatelessWidget {
   }
 }
 
-/// 也用于楼中楼，容许窄屏和较大的系统字体自动换行。
+/// 一级评论的用户徽标，容许窄屏和较大的系统字体自动换行。
 class CommentAuthorBadges extends StatelessWidget {
   const CommentAuthorBadges({
     super.key,
@@ -113,11 +118,7 @@ class CommentAuthorBadges extends StatelessWidget {
       runSpacing: 3,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 3),
-          decoration: BoxDecoration(color: _orange, borderRadius: BorderRadius.circular(2)),
-          child: Text('lv.$level', style: const TextStyle(color: Colors.white, fontSize: 12)),
-        ),
+        TopicLevelBadge(level: level),
         if (author.endlessRank > 0)
           Tooltip(
             message: '无尽模式排名：${author.endlessRank}',
@@ -134,9 +135,7 @@ class CommentAuthorBadges extends StatelessWidget {
             ),
           ),
         if (isAdmin)
-          const Text('官方', style: TextStyle(color: Colors.lightBlue, fontSize: 12))
-        else if (author.vip)
-          const Icon(Icons.verified, size: 14, color: _orange),
+          const Text('官方', style: TextStyle(color: Colors.lightBlue, fontSize: 12)),
         if (author.userTitle.isNotEmpty)
           Text(author.userTitle, style: const TextStyle(color: _orange, fontSize: 12)),
       ],

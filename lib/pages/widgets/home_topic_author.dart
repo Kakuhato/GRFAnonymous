@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
+import 'topic_identity_badge.dart';
 
 /// 帖子作者资料，仅展示接口返回的信息，不依赖页面或请求对象。
 class HomeTopicAuthor extends StatelessWidget {
@@ -64,10 +65,11 @@ class HomeTopicAuthor extends StatelessWidget {
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.verified,
-                        size: 16,
-                        color: topic.isAdmin ? _officialBlue : _orange,
+                      child: Image.asset(
+                        'assets/certificateBadge.png',
+                        width: 16,
+                        height: 16,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
@@ -97,17 +99,7 @@ class HomeTopicAuthor extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: _orange,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Text(
-                      'lv.${topic.userLevel}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
+                  TopicLevelBadge(level: topic.userLevel),
               // 排名字段可能缺失；与官网一致，仅有有效排名时展示层数。
               if (topic.endlessRank > 0)
                 Tooltip(

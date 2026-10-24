@@ -4,6 +4,10 @@ import 'package:flutter/services.dart';
 import '../models/userData.dart';
 import '../pageRequest/myPageRequest.dart';
 import '../ui/uiSizeUtil.dart';
+import '../utils/routeUtil.dart';
+import 'game_hero_list_page.dart';
+import 'widgets/game_hero_card.dart';
+import 'widgets/game_weekly_stage.dart';
 
 class GameDataPage extends StatefulWidget {
   const GameDataPage({super.key});
@@ -17,7 +21,6 @@ class _GameDataPageState extends State<GameDataPage> {
   GameData? _data;
   bool _loading = true;
   String? _error;
-  bool _showAllHeroes = false;
 
   @override
   void initState() {
@@ -92,14 +95,12 @@ class _GameDataPageState extends State<GameDataPage> {
                       _section(
                         '人形展示',
                         _heroes(_data!.heroList),
-                        action: _data!.heroList.length > 4
-                            ? TextButton(
-                                onPressed: () => setState(() => _showAllHeroes = !_showAllHeroes),
-                                child: Text(_showAllHeroes ? '收起' : '查看更多'),
-                              )
-                            : null,
+                        action: TextButton(
+                          onPressed: () => RouteUtils.push(context, const GameHeroListPage()),
+                          child: const Text('查看更多'),
+                        ),
                       ),
-                      _section('游戏战绩', _stages(_data!.stageInfo)),
+                      _section('游戏战绩', _stages(_data!.stageInfo), contentPadding: 4),
                       _section('主题活动', _themes(_data!.themeInfo)),
                     ],
                   ),
@@ -151,18 +152,21 @@ class _GameDataPageState extends State<GameDataPage> {
     );
   }
 
-  Widget _section(String title, Widget child, {Widget? action}) {
+  Widget _section(String title, Widget child, {Widget? action, double contentPadding = 16}) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.only(top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-            if (action != null) action,
-          ]),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(children: [
+              Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+              if (action != null) action,
+            ]),
+          ),
           const SizedBox(height: 10),
-          child,
+          Padding(padding: EdgeInsets.symmetric(horizontal: contentPadding), child: child),
         ],
       ),
     );
@@ -203,88 +207,19 @@ class _GameDataPageState extends State<GameDataPage> {
 
   Widget _heroes(List<HeroList> heroes) {
     if (heroes.isEmpty) return const Text('暂无人形展示');
-    final visible = _showAllHeroes ? heroes : heroes.take(4).toList();
     return LayoutBuilder(builder: (context, constraints) {
       final columns = constraints.maxWidth < 300 ? 3 : 4;
-      return Wrap(
-        spacing: 6,
-        runSpacing: 10,
-        children: visible.map((hero) => SizedBox(
-          width: (constraints.maxWidth - (columns - 1) * 6) / columns,
-          child: _heroCard(hero),
-        )).toList(),
-      );
-    });
-  }
-
-  Widget _heroCard(HeroList hero) {
-    final imageUrl = hero.skin.trim().isNotEmpty ? hero.skin : hero.showPic;
-    return LayoutBuilder(builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      final badgeSize = width * 0.2;
-      // 原图四周包含边框和阴影，叠加内容需放在卡片内部。
-      final contentInset = width * 0.06;
-      final fallback = AspectRatio(
-        aspectRatio: 0.625,
-        child: Center(child: Text(hero.name, textAlign: TextAlign.center)),
-      );
-      return Semantics(
-        label: '${hero.name}，等级 ${hero.lv}，grade ${hero.grade}',
-        child: Stack(
+      final cardWidth = (constraints.maxWidth - (columns - 1) * 6) / columns;
+      return SingleChildScrollView(
+        key: const PageStorageKey<String>('gameHeroPreview'),
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 卡面已包含角色名和底部等级栏，优先使用皮肤卡面。
-            if (imageUrl.isEmpty)
-              fallback
-            else
-              CachedNetworkImage(
-                imageUrl: imageUrl,
-                width: width,
-                fit: BoxFit.fitWidth,
-                placeholder: (_, __) => fallback,
-                errorWidget: (_, __, ___) => fallback,
-              ),
-            Positioned(
-              top: contentInset,
-              right: contentInset,
-              width: badgeSize,
-              height: badgeSize,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.asset('assets/grade.png'),
-                  Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        '${hero.grade}',
-                        textScaler: TextScaler.noScaling,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: badgeSize * 0.72,
-                          height: 1,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: contentInset,
-              right: contentInset,
-              bottom: width * 0.065,
-              child: Text(
-                'lv.${hero.lv}',
-                textAlign: TextAlign.center,
-                textScaler: TextScaler.noScaling,
-                style: TextStyle(
-                  color: Colors.deepOrange,
-                  fontSize: width * 0.15,
-                  height: 1,
-                ),
-              ),
-            ),
+            for (var index = 0; index < heroes.length; index++) ...[
+              if (index > 0) const SizedBox(width: 6),
+              SizedBox(width: cardWidth, child: GameHeroCard(hero: heroes[index])),
+            ],
           ],
         ),
       );
@@ -294,27 +229,66 @@ class _GameDataPageState extends State<GameDataPage> {
   Widget _stages(StageInfo stages) {
     final entries = stages.entries;
     if (entries.isEmpty) return const Text('暂无游戏战绩');
-    return Column(
-      children: entries.map((stage) => Container(
+    final carouselGroups = {
+      for (final key in ['week_special', 'rouge_season'])
+        key: entries.where((stage) => stage.key == key).toList(),
+    };
+    final children = <Widget>[];
+    final addedCarousels = <String>{};
+    for (final stage in entries) {
+      final carouselEntries = carouselGroups[stage.key];
+      if (carouselEntries != null) {
+        if (addedCarousels.add(stage.key)) {
+          children.add(Padding(
+            key: ValueKey(stage.key),
+            padding: const EdgeInsets.only(bottom: 10),
+            child: GameWeeklyStageCarousel(
+              // 刷新后数量变化时重新定位，避免保留超出范围的页码。
+              key: ValueKey('${stage.key}_${carouselEntries.length}'),
+              stages: carouselEntries,
+              stageBuilder: stage.key == 'rouge_season'
+                  ? (context, entry) => _standardStageBanner(entry)
+                  : null,
+            ),
+          ));
+        }
+        continue;
+      }
+      if (stage.key == 'week_common') {
+        children.add(Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: GameWeeklyStageBanner(stage: stage),
+        ));
+        continue;
+      }
+      children.add(Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 10),
-        child: Stack(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        child: _standardStageBanner(stage),
+      ));
+    }
+    return Column(children: children);
+  }
+
+  Widget _standardStageBanner(GameStageEntry stage) {
+    return AspectRatio(
+      aspectRatio: 3.7,
+      child: Stack(
           alignment: Alignment.bottomRight,
           children: [
-            AspectRatio(aspectRatio: 3.7, child: _image(stage.image, BoxFit.cover)),
+            Positioned.fill(child: _image(stage.image, BoxFit.cover)),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               // color: Colors.black54,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(stage.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 if (stage.detail.isNotEmpty)
                   Text(stage.detail, textAlign: TextAlign.right, style: const TextStyle(color: Colors.white)),
               ]),
             ),
           ],
-        ),
-      )).toList(),
+      ),
     );
   }
 

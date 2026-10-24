@@ -15,11 +15,14 @@ import '../pageRequest/likeAndFollow.dart';
 import '../ui/uiSizeUtil.dart';
 import '../utils/globalKey.dart';
 import '../utils/routeUtil.dart';
+import '../utils/topic_link.dart';
+import '../models/webViewContent.dart';
 import 'otherUserPage.dart';
 
 class WebViewPage extends StatefulWidget {
   final String topicId;
-  const WebViewPage({super.key, required this.topicId});
+  final WebViewContent? initialContent;
+  const WebViewPage({super.key, required this.topicId, this.initialContent});
 
   @override
   State<StatefulWidget> createState() {
@@ -32,6 +35,13 @@ class _WebViewPageState extends State<WebViewPage> {
   WebViewRequest webViewRequest = WebViewRequest();
   final TextEditingController _commentController = TextEditingController();
   bool isLoading = true;
+  String? _loadError;
+  String? _commentError;
+  bool _initializing = false;
+  bool _commentsLoading = false;
+  bool _retryCommentsFromStart = true;
+  bool _isOpeningTopicLink = false;
+  final Set<int> _pendingReplyLikes = {};
   bool _isFollowing = false;
   bool isInputActive = false;
   String replyto = "";
@@ -44,16 +54,93 @@ class _WebViewPageState extends State<WebViewPage> {
 
   @override
   initState() {
-    initTopic();
     super.initState();
+    initTopic();
   }
 
-  Future initTopic() async {
-    await webViewRequest.getWebViewContent(widget.topicId);
-    await webViewRequest.getReplyList(widget.topicId);
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> initTopic() async {
+    if (_initializing) return;
+    _initializing = true;
     setState(() {
-      isLoading = false;
+      isLoading = true;
+      _loadError = null;
     });
+    try {
+      final initial = widget.initialContent;
+      if (initial != null && '${initial.topicId}' == widget.topicId) {
+        webViewRequest.webViewContent = initial;
+      } else {
+        await webViewRequest.getWebViewContent(widget.topicId);
+      }
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      await _loadComments();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _loadError = error is TopicRequestException
+          ? error.message : '帖子加载失败，请重试');
+    } finally {
+      _initializing = false;
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Future<IndicatorResult> _loadComments({bool isInit = true}) async {
+    if (!mounted || _commentsLoading) return IndicatorResult.fail;
+    setState(() {
+      _commentsLoading = true;
+      _commentError = null;
+      _retryCommentsFromStart = isInit;
+      if (isInit) {
+        webViewRequest.replyList = [];
+        webViewRequest.hasNext = false;
+      }
+    });
+    try {
+      await webViewRequest.getReplyList(widget.topicId,
+          isInit: isInit, isAuther: isAuther, sort: sortType);
+      // 是否继续加载由 hasNext 控制，避免切换评论筛选后残留 noMore 状态。
+      return IndicatorResult.success;
+    } catch (error) {
+      if (mounted) setState(() => _commentError = error is TopicRequestException
+          ? error.message : '评论加载失败，请重试');
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() => _commentsLoading = false);
+    }
+  }
+
+  Future<bool> _openTopicLink(String url) async {
+    final topicId = TopicLink.parseHref(url);
+    if (topicId == null) return false;
+    // 已识别的社区帖子链接始终由 App 接管，失败也不回退到浏览器。
+    if (!mounted || _isOpeningTopicLink) return true;
+    if (topicId == widget.topicId) {
+      showToast('当前已是该帖子');
+      return true;
+    }
+    _isOpeningTopicLink = true;
+    try {
+      final request = WebViewRequest();
+      await request.getWebViewContent(topicId);
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return true;
+      await RouteUtils.push(context, WebViewPage(
+        topicId: topicId, initialContent: request.webViewContent,
+      ));
+    } catch (error) {
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+        showToast(error is TopicRequestException ? error.message : '帖子加载失败，请重试');
+      }
+    } finally {
+      _isOpeningTopicLink = false;
+    }
+    return true;
   }
 
   void clearComment() {
@@ -66,11 +153,29 @@ class _WebViewPageState extends State<WebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? const Center(
-            child: CircularProgressIndicator(),
-          )
-        : Scaffold(
+    if (isLoading || _loadError != null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+          title: Text('帖子详情', style: TextStyle(fontSize: UiSizeUtil.headerFontSize)),
+        ),
+        body: Center(
+          child: isLoading
+              ? const CircularProgressIndicator()
+              : Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(_loadError!, textAlign: TextAlign.center),
+                    TextButton(onPressed: initTopic, child: const Text('重新加载')),
+                    TextButton(onPressed: () => Navigator.maybePop(context), child: const Text('返回')),
+                  ]),
+                ),
+        ),
+      );
+    }
+    return Scaffold(
             backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
             appBar: PreferredSize(
               preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
@@ -110,8 +215,12 @@ class _WebViewPageState extends State<WebViewPage> {
                       color: Colors.white,
                     ),
                     onPressed: () async {
-                      String textToCopy =
-                          "https://gf2-bbs.sunborngame.com/share?id=${widget.topicId}"; // 你想复制的文本
+                      final topic = webViewRequest.webViewContent;
+                      final textToCopy = TopicLink.shareText(
+                        topicId: widget.topicId,
+                        author: topic.userNickName,
+                        title: topic.title,
+                      );
                       bool result = await likeAndFollow.share(widget.topicId);
                       if (result) {
                         await Clipboard.setData(
@@ -158,13 +267,7 @@ class _WebViewPageState extends State<WebViewPage> {
               header: const MaterialHeader(),
               refreshOnStart: true,
               onLoad: webViewRequest.hasNext
-                  ? () async {
-                      await webViewRequest.getReplyList(
-                        widget.topicId,
-                        isInit: false,
-                      );
-                      setState(() {});
-                    }
+                  ? () => _loadComments(isInit: false)
                   : null,
               child: SingleChildScrollView(
                 // headerSliverBuilder:
@@ -182,7 +285,20 @@ class _WebViewPageState extends State<WebViewPage> {
                     _contentBuilder(),
                     _queryBuilder(),
                     _replyListBuilder(),
-                    if (!webViewRequest.hasNext)
+                    if (_commentsLoading)
+                      const Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
+                    if (_commentError != null)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(children: [
+                          Text(_commentError!, textAlign: TextAlign.center),
+                          TextButton(
+                            onPressed: () => _loadComments(isInit: _retryCommentsFromStart),
+                            child: const Text('重新加载评论'),
+                          ),
+                        ]),
+                      ),
+                    if (!webViewRequest.hasNext && !_commentsLoading && _commentError == null)
                       Container(
                         margin: const EdgeInsets.only(top: 10, bottom: 10),
                         child: const Text(
@@ -230,16 +346,14 @@ class _WebViewPageState extends State<WebViewPage> {
                 )
                 .toList(),
             onChanged: (newValue) async {
+              if (_commentsLoading || newValue == null) return;
               if (newValue == "所有评论") {
                 isAuther = false;
               } else {
                 isAuther = true;
               }
-              await webViewRequest.getReplyList(widget.topicId,
-                  isAuther: isAuther, sort: sortType);
-              setState(() {
-                selectedOption1 = newValue!;
-              });
+              setState(() => selectedOption1 = newValue);
+              await _loadComments();
               // showToast("已选择: $newValue");
             },
           ),
@@ -273,6 +387,7 @@ class _WebViewPageState extends State<WebViewPage> {
   }
 
   Future<void> onSortOptionChanged(String? newValue) async {
+    if (_commentsLoading || newValue == null) return;
     if (newValue == "默认") {
       sortType = 0;
     } else if (newValue == "最早") {
@@ -281,14 +396,8 @@ class _WebViewPageState extends State<WebViewPage> {
       sortType = 2;
     }
 
-    // 调用 webViewRequest 方法
-    await webViewRequest.getReplyList(widget.topicId,
-        isAuther: isAuther, sort: sortType);
-
-    // 更新状态
-    setState(() {
-      selectedOption2 = newValue!;
-    });
+    setState(() => selectedOption2 = newValue);
+    await _loadComments();
 
     // Optional: showToast if needed
     // showToast("已选择: $newValue");
@@ -518,6 +627,7 @@ class _WebViewPageState extends State<WebViewPage> {
             child: HtmlWidget(
               topic.content,
               factoryBuilder: () => MyWidgetFactory(context),
+              onTapUrl: _openTopicLink,
               customStylesBuilder: HtmlProcess.buildCustomStyles,
               textStyle: TextStyle(
                 fontSize: UiSizeUtil.postContentFontSize,
@@ -578,6 +688,7 @@ class _WebViewPageState extends State<WebViewPage> {
               child: HtmlWidget(
                 reply.content,
                 factoryBuilder: () => MyWidgetFactory(context),
+                onTapUrl: _openTopicLink,
                 customStylesBuilder: (element) {
                   return HtmlProcess.buildCustomStyles(element);
                 },
@@ -683,6 +794,35 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 
+  Future<void> _likeSecondaryReply(CommentReply reply) async {
+    if (!mounted || _pendingReplyLikes.contains(reply.commentId)) return;
+    setState(() => _pendingReplyLikes.add(reply.commentId));
+    try {
+      // 点赞的是楼中楼评论自身，不能使用所属楼层的 replyId。
+      final success = await webViewRequest.likeComment(widget.topicId, reply.commentId);
+      if (!mounted) return;
+      if (!success) {
+        showToast('操作失败，请稍后重试');
+        return;
+      }
+      setState(() {
+        reply.isLike = !reply.isLike;
+        if (reply.isLike) {
+          reply.likeNum++;
+        } else if (reply.likeNum > 0) {
+          reply.likeNum--;
+        }
+      });
+      showToast(reply.isLike ? '点赞成功' : '取消点赞');
+    } catch (_) {
+      if (mounted) showToast('操作失败，请检查网络或登录状态后重试');
+    } finally {
+      if (mounted) {
+        setState(() => _pendingReplyLikes.remove(reply.commentId));
+      }
+    }
+  }
+
   Widget _secondaryReplyBuilder(CommentReply reply, int replyId) {
     return Container(
       margin: const EdgeInsets.only(left: 45),
@@ -713,11 +853,6 @@ class _WebViewPageState extends State<WebViewPage> {
                     color: Color.fromRGBO(242, 108, 28, 1),
                   ),
                 ),
-              ),
-              CommentAuthorBadges(
-                author: reply,
-                level: reply.userLevel,
-                isAdmin: reply.isAdmin,
               ),
               if (reply.isAuthor)
                 const Padding(
@@ -761,6 +896,7 @@ class _WebViewPageState extends State<WebViewPage> {
             child: HtmlWidget(
               reply.content,
               factoryBuilder: () => MyWidgetFactory(context),
+              onTapUrl: _openTopicLink,
               customStylesBuilder: (element) {
                 return HtmlProcess.buildCustomStyles(element);
               },
@@ -782,6 +918,36 @@ class _WebViewPageState extends State<WebViewPage> {
                   ),
                 ),
               ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _pendingReplyLikes.contains(reply.commentId)
+                    ? null
+                    : () => _likeSecondaryReply(reply),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        reply.isLike ? 'assets/liked.png' : 'assets/likes.png',
+                        width: UiSizeUtil.postCommentLikeIconSize,
+                        height: UiSizeUtil.postCommentLikeIconSize,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Text(
+                          reply.likeNum.toString(),
+                          style: TextStyle(
+                            fontSize: UiSizeUtil.postCommentLikeFontSize,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
               GestureDetector(
                 onTap: () {
                   replyto = reply.userNickName;

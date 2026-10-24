@@ -82,6 +82,31 @@ class MyPageRequest {
     }
   }
 
+  Future<List<HeroList>> fetchGameHeroes() async {
+    // Authorization 由现有请求拦截器从登录信息中自动添加。
+    final response = await DioInstance.instance().post(
+      path: "/community/game/hero_list",
+      data: {'duty': 0, 'rank': 0},
+    );
+    final body = response.data;
+    if (body is! Map || body['Code'] != 0 || body['data'] is! Map) {
+      throw Exception('人形列表获取失败');
+    }
+    final list = body['data']['list'];
+    if (list is! List) throw Exception('人形列表格式异常');
+    return list.map((item) {
+      if (item is! Map) throw Exception('人形数据格式异常');
+      final hero = Map<String, dynamic>.from(item);
+      // 完整列表的字段名与 game/info 中的展示列表不同。
+      return HeroList.fromJson({
+        ...hero,
+        'id': hero['hero_id'] ?? hero['id'],
+        'lv': hero['hero_level'] ?? hero['lv'],
+        'grade': hero['hero_grade'] ?? hero['grade'],
+      });
+    }).toList();
+  }
+
   Future getOtherUserData(String uid) async {
     Response response = await DioInstance.instance().post(
       path: "/community/member/info",

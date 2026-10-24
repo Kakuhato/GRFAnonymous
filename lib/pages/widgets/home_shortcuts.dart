@@ -7,12 +7,14 @@ class HomeShortcuts extends StatelessWidget {
     this.isSigningIn = false,
     required this.onSignIn,
     required this.onShop,
+    required this.onGameData,
   });
 
   final bool isSignedIn;
   final bool isSigningIn;
   final VoidCallback onSignIn;
   final VoidCallback onShop;
+  final VoidCallback onGameData;
 
   @override
   Widget build(BuildContext context) {
@@ -73,11 +75,15 @@ class HomeShortcuts extends StatelessWidget {
               const Text('攻略集锦'),
             ],
           ),
-          Column(
-            children: [
-              Image.asset('assets/data.png', height: 62),
-              const Text('游戏数据'),
-            ],
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onGameData,
+            child: Column(
+              children: [
+                Image.asset('assets/data.png', height: 62),
+                const Text('游戏数据'),
+              ],
+            ),
           ),
         ],
       ),
