@@ -18,6 +18,7 @@ import '../utils/routeUtil.dart';
 import '../utils/topic_link.dart';
 import '../models/webViewContent.dart';
 import 'otherUserPage.dart';
+import 'theme_detail_page.dart';
 
 class WebViewPage extends StatefulWidget {
   final String topicId;
@@ -635,7 +636,10 @@ class _WebViewPageState extends State<WebViewPage> {
               ),
             ),
           ),
-          TopicDetailMetadata(topic: topic),
+          TopicDetailMetadata(
+            topic: topic,
+            onOpenTheme: (id, name) => RouteUtils.push(context, ThemeDetailPage(themeId: id, name: name)),
+          ),
         ],
       ),
     );

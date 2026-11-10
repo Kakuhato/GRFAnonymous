@@ -7,6 +7,7 @@ import 'package:grfanonymous/pageRequest/likeAndFollow.dart';
 import 'package:grfanonymous/pages/shopPage.dart';
 import 'search_page.dart';
 import 'game_data_page.dart';
+import 'theme_detail_page.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
 import 'package:grfanonymous/pages/widgets/home_feed.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
@@ -195,6 +196,7 @@ class HomePageState extends State<HomePage> {
         onSignIn: _signIn,
         onShop: () => RouteUtils.push(context, const ShopPage()),
         onGameData: () => RouteUtils.push(context, const GameDataPage()),
+        onOpenTheme: (id, name) => RouteUtils.push(context, ThemeDetailPage(themeId: id, name: name)),
         onOpenTopic: (topic) => RouteUtils.push(
           context,
           WebViewPage(topicId: topic.topicId.toString()),

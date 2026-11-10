@@ -36,6 +36,7 @@ class HomeFeed extends StatefulWidget {
     required this.onShop,
     required this.onGameData,
     required this.onOpenTopic,
+    required this.onOpenTheme,
     required this.onFollow,
     required this.onLike,
   });
@@ -59,6 +60,7 @@ class HomeFeed extends StatefulWidget {
   final VoidCallback onShop;
   final VoidCallback onGameData;
   final ValueChanged<Topic> onOpenTopic;
+  final void Function(int id, String name) onOpenTheme;
   final ValueChanged<Topic> onFollow;
   final ValueChanged<Topic> onLike;
 
@@ -180,6 +182,7 @@ class _HomeFeedState extends State<HomeFeed> {
                     );
                   }
                   return HomeTopicCard(
+                    onOpenTheme: widget.onOpenTheme,
                     topic: topic,
                     onOpen: () => widget.onOpenTopic(topic),
                     onFollow: () => widget.onFollow(topic),

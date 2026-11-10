@@ -10,7 +10,9 @@ import 'widgets/game_hero_card.dart';
 import 'widgets/game_weekly_stage.dart';
 
 class GameDataPage extends StatefulWidget {
-  const GameDataPage({super.key});
+  // 不传 UID 时查看本人；传入时查看指定社区用户。
+  final int? uid;
+  const GameDataPage({super.key, this.uid});
 
   @override
   State<GameDataPage> createState() => _GameDataPageState();
@@ -30,7 +32,7 @@ class _GameDataPageState extends State<GameDataPage> {
 
   Future<void> _load() async {
     try {
-      final data = await _request.fetchGameData();
+      final data = await _request.fetchGameData(uid: widget.uid);
       if (!mounted) return;
       setState(() {
         _data = data;
@@ -95,10 +97,13 @@ class _GameDataPageState extends State<GameDataPage> {
                       _section(
                         '人形展示',
                         _heroes(_data!.heroList),
-                        action: TextButton(
-                          onPressed: () => RouteUtils.push(context, const GameHeroListPage()),
-                          child: const Text('查看更多'),
-                        ),
+                        // 完整人形列表目前只接入本人查询，避免展示成登录用户的数据。
+                        action: widget.uid == null
+                            ? TextButton(
+                                onPressed: () => RouteUtils.push(context, const GameHeroListPage()),
+                                child: const Text('查看更多'),
+                              )
+                            : null,
                       ),
                       _section('游戏战绩', _stages(_data!.stageInfo), contentPadding: 4),
                       _section('主题活动', _themes(_data!.themeInfo)),

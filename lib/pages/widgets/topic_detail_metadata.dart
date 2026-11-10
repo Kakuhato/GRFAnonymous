@@ -4,9 +4,10 @@ import 'package:grfanonymous/ui/uiSizeUtil.dart';
 
 /// 正文后的创作声明、所属分类、话题和时间信息。
 class TopicDetailMetadata extends StatelessWidget {
-  const TopicDetailMetadata({super.key, required this.topic});
+  const TopicDetailMetadata({super.key, required this.topic, this.onOpenTheme});
 
   final WebViewContent topic;
+  final void Function(int id, String name)? onOpenTheme;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +28,13 @@ class TopicDetailMetadata extends StatelessWidget {
             if (topic.categoryName.isNotEmpty) _tag(topic.categoryName),
             for (final theme in topic.themeInfo)
               if (theme.name?.isNotEmpty == true)
-                _tag('#${theme.name}', highlighted: theme.type != 0 && theme.active),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: (theme.id ?? 0) > 0 && onOpenTheme != null
+                      ? () => onOpenTheme!(theme.id!, theme.name!)
+                      : null,
+                  child: _tag('#${theme.name}', highlighted: theme.type != 0 && theme.active),
+                ),
           ],
         ),
         const SizedBox(height: 12),

@@ -62,10 +62,11 @@ class MyPageRequest {
     }
   }
 
-  Future<GameData> fetchGameData() async {
+  Future<GameData> fetchGameData({int? uid}) async {
+    if (uid != null && uid <= 0) throw ArgumentError.value(uid, 'uid');
     final response = await DioInstance.instance().post(
       path: "/community/game/info",
-      data: {},
+      data: {if (uid != null) 'uid': uid},
     );
     final body = response.data;
     if (body is! Map || body['Code'] != 0 || body['data'] is! Map) {
@@ -122,16 +123,10 @@ class MyPageRequest {
   }
 
   Future getOtherGameData(String uid) async {
-    Response response = await DioInstance.instance().post(
-      path: "/community/game/info",
-      data: {
-        "uid": int.parse(uid),
-      },
-    );
-    if (response.data != null && response.data['Code'] == 0) {
-      gameData = GameData.fromJson(response.data['data']);
-    } else {
-      showToast("用户信息获取失败");
+    try {
+      gameData = await fetchGameData(uid: int.parse(uid));
+    } catch (_) {
+      showToast("游戏信息获取失败");
     }
   }
 

@@ -10,6 +10,7 @@ class HomeTopicCard extends StatelessWidget {
     required this.topic,
     required this.onOpen,
     this.onFollow,
+    this.onOpenTheme,
     this.showFollowButton = true,
     required this.onLike,
   });
@@ -17,6 +18,7 @@ class HomeTopicCard extends StatelessWidget {
   final Topic topic;
   final VoidCallback onOpen;
   final VoidCallback? onFollow;
+  final void Function(int id, String name)? onOpenTheme;
   final bool showFollowButton;
   final VoidCallback onLike;
 
@@ -79,7 +81,13 @@ class HomeTopicCard extends StatelessWidget {
                     children: [
                       _tag(topic.categoryName),
                       for (final theme in topic.themeInfo)
-                        _tag('#${theme.themeName}#', isTheme: true),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: theme.themeId > 0 && onOpenTheme != null
+                              ? () => onOpenTheme!(theme.themeId, theme.themeName)
+                              : null,
+                          child: _tag('#${theme.themeName}#', isTheme: true),
+                        ),
                     ],
                   ),
                 ),

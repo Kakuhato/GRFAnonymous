@@ -16,6 +16,7 @@ import '../pageRequest/likeAndFollow.dart';
 import '../pageRequest/requestUtils.dart';
 import '../ui/uiSizeUtil.dart';
 import '../utils/htmlUtil.dart';
+import 'game_data_page.dart';
 
 class OtherUserPage extends StatefulWidget {
   final String uid;
@@ -161,7 +162,18 @@ class _OtherUserPageState extends State<OtherUserPage>
                   ),
                 ),
                 SliverToBoxAdapter(
-                  child: _gameInfo(), //导航栏
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      final uid = int.tryParse(widget.uid);
+                      if (uid == null || uid <= 0) {
+                        showToast('用户 ID 无效，无法查看游戏数据');
+                        return;
+                      }
+                      RouteUtils.push(context, GameDataPage(uid: uid));
+                    },
+                    child: _gameInfo(),
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: Container(
