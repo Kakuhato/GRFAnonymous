@@ -22,6 +22,7 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
   final _request = ThemeRequest();
   final _actions = LikeAndFollow();
   final _scroll = ScrollController();
+  final _showTopButton = ValueNotifier(false);
   final _pendingLikes = <int>{};
   final _pendingFollows = <int>{};
   ThemeDetail? _detail;
@@ -46,13 +47,24 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
   @override
   void dispose() {
     _scroll.dispose();
+    _showTopButton.dispose();
     super.dispose();
   }
 
   void _onScroll() {
+    _showTopButton.value = _scroll.offset > 150;
     if (_scroll.position.extentAfter < 250 && !_loading && _hasMore && _listError == null) {
       _loadTopics();
     }
+  }
+
+  void _scrollToTop() {
+    if (!_scroll.hasClients) return;
+    _scroll.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutQuint,
+    );
   }
 
   Future<void> _loadDetail() async {
@@ -188,48 +200,73 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
         iconTheme: IconThemeData(size: UiSizeUtil.topIconSize, color: Colors.white),
         title: Text('话题详情', style: TextStyle(fontSize: UiSizeUtil.headerFontSize)),
       ),
-      body: SafeArea(top: false, child: RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView.builder(
-          controller: _scroll, physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 16), itemCount: _topics.length + 3,
-          itemBuilder: (context, index) {
-            if (index == 0) return _header();
-            if (index == 1) {
-              return Container(color: Colors.white, child: Row(children: [
-                for (final sort in [1, 3])
-                  InkWell(onTap: () => _changeSort(sort), child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(border: Border(bottom: BorderSide(
-                      color: _sort == sort ? const Color(0xFFFF701F) : Colors.transparent, width: 2))),
-                    child: Text(sort == 1 ? '最新' : '最热', style: TextStyle(
-                      color: _sort == sort ? Colors.black : Colors.grey,
-                      fontSize: UiSizeUtil.homePageTitleFontSize)),
-                  )),
-              ]));
-            }
-            if (index < _topics.length + 2) {
-              final topic = _topics[index - 2];
-              return HomeTopicCard(topic: topic,
-                onOpen: () => RouteUtils.push(context, WebViewPage(topicId: '${topic.topicId}')),
-                onLike: () => _like(topic), onFollow: () => _follow(topic),
-                onOpenTheme: (id, name) {
-                  if (id == widget.themeId) return;
-                  RouteUtils.push(context, ThemeDetailPage(themeId: id, name: name));
-                },
-              );
-            }
-            return Padding(padding: const EdgeInsets.all(16), child: Center(
-              child: _loading ? const CircularProgressIndicator()
-                : _listError != null
-                  ? TextButton(onPressed: () => _loadTopics(), child: Text(_listError!))
-                  : _hasMore
-                    ? TextButton(onPressed: () => _loadTopics(), child: const Text('加载更多'))
-                    : Text(_topics.isEmpty ? '暂无相关帖子' : '没有更多帖子了', style: const TextStyle(color: Colors.grey)),
-            ));
-          },
-        ),
+      body: SafeArea(top: false, child: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              controller: _scroll, physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 16), itemCount: _topics.length + 3,
+              itemBuilder: (context, index) {
+                if (index == 0) return _header();
+                if (index == 1) {
+                  return Container(color: Colors.white, child: Row(children: [
+                    for (final sort in [1, 3])
+                      InkWell(onTap: () => _changeSort(sort), child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(border: Border(bottom: BorderSide(
+                          color: _sort == sort ? const Color(0xFFFF701F) : Colors.transparent, width: 2))),
+                        child: Text(sort == 1 ? '最新' : '最热', style: TextStyle(
+                          color: _sort == sort ? Colors.black : Colors.grey,
+                          fontSize: UiSizeUtil.homePageTitleFontSize)),
+                      )),
+                  ]));
+                }
+                if (index < _topics.length + 2) {
+                  final topic = _topics[index - 2];
+                  return HomeTopicCard(topic: topic,
+                    onOpen: () => RouteUtils.push(context, WebViewPage(topicId: '${topic.topicId}')),
+                    onLike: () => _like(topic), onFollow: () => _follow(topic),
+                    onOpenTheme: (id, name) {
+                      if (id == widget.themeId) return;
+                      RouteUtils.push(context, ThemeDetailPage(themeId: id, name: name));
+                    },
+                  );
+                }
+                return Padding(padding: const EdgeInsets.all(16), child: Center(
+                  child: _loading ? const CircularProgressIndicator()
+                    : _listError != null
+                      ? TextButton(onPressed: () => _loadTopics(), child: Text(_listError!))
+                      : _hasMore
+                        ? TextButton(onPressed: () => _loadTopics(), child: const Text('加载更多'))
+                        : Text(_topics.isEmpty ? '暂无相关帖子' : '没有更多帖子了', style: const TextStyle(color: Colors.grey)),
+                ));
+              },
+            ),
+          ),
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _showTopButton,
+              builder: (context, visible, child) =>
+                  visible ? child! : const SizedBox.shrink(),
+              child: FloatingActionButton(
+                heroTag: null,
+                tooltip: '返回顶部',
+                onPressed: _scrollToTop,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                child: Image.asset(
+                  'assets/top.png',
+                  width: 100,
+                  fit: BoxFit.fitHeight,
+                ),
+              ),
+            ),
+          ),
+        ],
       )),
     );
   }

@@ -150,14 +150,15 @@ class WebViewRequest {
         "topic_id": int.tryParse(topicId),
       },
     );
-    if(response.data["Code"] == 0){
-      showToast("发表成功");
-      return SingleComment.fromJson(response.data["data"]);
+    final body = response.data;
+    if (body is! Map || '${body['Code']}' != '0') {
+      throw const TopicRequestException('回复加载失败，请重试');
     }
-    else{
-      showToast(response.data["Message"]);
-      return SingleComment.fromJson({});
+    final data = body['data'];
+    if (data is! Map || '${data['comment_id']}' != '$commentId') {
+      throw const TopicRequestException('回复数据异常，请重试');
     }
+    return SingleComment.fromJson(Map<String, dynamic>.from(data));
   }
 
   //回传detail
