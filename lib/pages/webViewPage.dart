@@ -107,6 +107,7 @@ class _WebViewPageState extends State<WebViewPage> {
 
   Future<IndicatorResult> _loadComments({bool isInit = true}) async {
     if (!mounted || _commentsLoading) return IndicatorResult.fail;
+    if (isInit) _resetCommentScroll();
     setState(() {
       _commentsLoading = true;
       _commentError = null;
@@ -278,22 +279,16 @@ class _WebViewPageState extends State<WebViewPage> {
               onLoad: webViewRequest.hasNext
                   ? () => _loadComments(isInit: false)
                   : null,
-              child: SingleChildScrollView(
-                // headerSliverBuilder:
-                //     (BuildContext context, bool innerBoxIsScrolled) => [
-                //   SliverToBoxAdapter(
-                //     child: _titleBuilder(),
-                //   ),
-                //   SliverToBoxAdapter(
-                //     child: _contentBuilder(),
-                //   ),
-                // ],
-                child: Column(
-                  children: [
-                    _titleBuilder(),
-                    _contentBuilder(),
-                    _queryBuilder(),
-                    _replyListBuilder(),
+              child: CustomScrollView(
+                // 只预建可视区域附近的评论，避免一次布局所有已加载楼层。
+                cacheExtent: 300,
+                slivers: [
+                  SliverToBoxAdapter(child: _titleBuilder()),
+                  SliverToBoxAdapter(child: _contentBuilder()),
+                  // 独立保留筛选栏锚点，离屏后仍可定位评论区。
+                  SliverToBoxAdapter(child: _queryBuilder()),
+                  _replySliverBuilder(),
+                  SliverToBoxAdapter(child: Column(children: [
                     if (_commentsLoading)
                       const Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
                     if (_commentError != null)
@@ -318,8 +313,8 @@ class _WebViewPageState extends State<WebViewPage> {
                           ),
                         ),
                       ),
-                  ],
-                ),
+                  ])),
+                ],
               ),
             ),
             bottomNavigationBar: _bottomInputBar(),
@@ -413,25 +408,43 @@ class _WebViewPageState extends State<WebViewPage> {
     // showToast("已选择: $newValue");
   }
 
-  Future<void> _onCommentButtonTap() async {
-    if (_scrollingToComments) return;
+  (ScrollPosition, double)? _commentScrollTarget({double alignment = 0}) {
     final anchorContext = _commentsStartKey.currentContext;
     final anchor = anchorContext?.findRenderObject();
-    if (anchorContext == null || anchor == null || !anchor.attached) return;
+    if (anchorContext == null || anchor is! RenderBox ||
+        !anchor.attached || !anchor.hasSize) return null;
     final scrollable = Scrollable.maybeOf(anchorContext);
     final viewport = RenderAbstractViewport.maybeOf(anchor);
-    if (scrollable == null || viewport == null) return;
+    if (scrollable == null || viewport == null) return null;
     final position = scrollable.position;
-    if (!position.hasContentDimensions) return;
+    if (!position.hasContentDimensions) return null;
+    return (position, viewport.getOffsetToReveal(anchor, alignment).offset);
+  }
+
+  void _resetCommentScroll() {
+    final target = _commentScrollTarget();
+    if (target == null) return;
+    final (position, offset) = target;
+    final start = offset.clamp(position.minScrollExtent, position.maxScrollExtent).toDouble();
+    // 在正文中阅读时保持位置；清空旧评论前先离开旧列表深处。
+    if (position.pixels > start) position.jumpTo(start);
+  }
+
+  Future<void> _onCommentButtonTap() async {
+    if (_scrollingToComments) return;
+    final visibleTarget = _commentScrollTarget(alignment: 1);
+    if (visibleTarget == null) return;
+    final (position, visibleOffset) = visibleTarget;
 
     // 筛选栏完整进入可视区域，或已经向下滚过它，就视为到达评论区。
-    final visibleOffset = viewport.getOffsetToReveal(anchor, 1).offset;
     if (position.pixels >= visibleOffset - 1) {
       await _openCommentComposer();
       return;
     }
 
-    final target = viewport.getOffsetToReveal(anchor, 0).offset
+    final startTarget = _commentScrollTarget();
+    if (startTarget == null) return;
+    final target = startTarget.$2
         .clamp(position.minScrollExtent, position.maxScrollExtent).toDouble();
     _scrollingToComments = true;
     try {
@@ -594,27 +607,36 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 
-  Widget _replyListBuilder() {
-    return ListView.builder(
-      itemBuilder: (context, index) {
-        final reply = webViewRequest.replyList[index];
-        return ValueListenableBuilder<int>(
-          key: ValueKey(reply.commentId),
-          valueListenable: _commentChanges.putIfAbsent(
-            reply.commentId, () => ValueNotifier(0)),
-          builder: (context, _, __) {
-            // 弹层会返回新的评论实例，不能一直捕获旧的 reply。
-            final items = webViewRequest.replyList;
-            if (index >= items.length || items[index].commentId != reply.commentId) {
-              return const SizedBox.shrink();
-            }
-            return _replyBuilder(items[index]);
-          },
-        );
-      },
-      itemCount: webViewRequest.replyList.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+  Widget _replySliverBuilder() {
+    final comments = webViewRequest.replyList;
+    final indexById = <int, int>{
+      for (var index = 0; index < comments.length; index++)
+        comments[index].commentId: index,
+    };
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final reply = comments[index];
+          return ValueListenableBuilder<int>(
+            key: ValueKey(reply.commentId),
+            valueListenable: _commentChanges.putIfAbsent(
+              reply.commentId, () => ValueNotifier(0)),
+            builder: (context, _, __) {
+              // 弹层会返回新的评论实例，不能一直捕获旧的 reply。
+              final items = webViewRequest.replyList;
+              if (index >= items.length || items[index].commentId != reply.commentId) {
+                return const SizedBox.shrink();
+              }
+              return _replyBuilder(items[index]);
+            },
+          );
+        },
+        childCount: comments.length,
+        findChildIndexCallback: (key) =>
+            key is ValueKey<int> ? indexById[key.value] : null,
+        // 交互状态与草稿保留在页面中，离屏楼层可释放后重新构建。
+        addAutomaticKeepAlives: false,
+      ),
     );
   }
 
