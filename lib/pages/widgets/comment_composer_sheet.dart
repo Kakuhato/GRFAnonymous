@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../utils/image_decode_size.dart';
 import 'package:flutter/material.dart';
 
 import '../../ui/uiSizeUtil.dart';
@@ -177,7 +178,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet> {
             if (widget.replyAvatar.isNotEmpty) ...[
               ClipOval(child: CachedNetworkImage(
                 imageUrl: widget.replyAvatar, width: 32, height: 32, fit: BoxFit.cover,
-                memCacheWidth: (32 * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                memCacheWidth: ImageDecodeSize.width(context, 32),
                 fadeInDuration: Duration.zero,
                 errorWidget: (_, __, ___) => const Icon(Icons.person, size: 32),
               )),

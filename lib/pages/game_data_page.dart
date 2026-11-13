@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import '../utils/image_decode_size.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/userData.dart';
@@ -124,7 +125,7 @@ class _GameDataPageState extends State<GameDataPage> {
       ),
       child: Row(
         children: [
-          SizedBox(width: 72, height: 72, child: _image(user.avatar, BoxFit.cover)),
+          SizedBox(width: 72, height: 72, child: _image(user.avatar, BoxFit.cover, displayWidth: 72)),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -326,6 +327,7 @@ class _GameDataPageState extends State<GameDataPage> {
           else
             CachedNetworkImage(
               imageUrl: theme.showPic,
+              memCacheWidth: ImageDecodeSize.width(context, width),
               width: width,
               fit: BoxFit.fitWidth,
               placeholder: (_, __) => fallback,
@@ -351,10 +353,13 @@ class _GameDataPageState extends State<GameDataPage> {
     });
   }
 
-  Widget _image(String url, BoxFit fit) {
+  Widget _image(String url, BoxFit fit, {double? displayWidth}) {
     if (url.isEmpty) return const Center(child: Icon(Icons.image_not_supported_outlined, color: Colors.grey));
     return CachedNetworkImage(
       imageUrl: url,
+      memCacheWidth: displayWidth == null
+          ? ImageDecodeSize.screen(context)
+          : ImageDecodeSize.width(context, displayWidth),
       fit: fit,
       placeholder: (_, __) => const Center(child: Icon(Icons.image_outlined, color: Colors.grey)),
       errorWidget: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined, color: Colors.grey)),

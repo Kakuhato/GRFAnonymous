@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../utils/image_decode_size.dart';
 import 'package:flutter/material.dart';
 
 import '../../pageRequest/emoji_request.dart';
@@ -20,6 +21,23 @@ class _OfficialEmojiPickerState extends State<OfficialEmojiPicker> {
   bool _failed = false;
   bool _loadScheduled = false;
   Animation<double>? _openingAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    EmojiRequest.changes.addListener(_onCatalogChanged);
+  }
+
+  void _onCatalogChanged() {
+    final categories = EmojiRequest.changes.value;
+    if (!mounted || categories == null) return;
+    final selectedId = _categories.isEmpty ? null : _categories[_selected].id;
+    final nextIndex = categories.indexWhere((category) => category.id == selectedId);
+    setState(() {
+      _categories = categories;
+      _selected = nextIndex < 0 ? 0 : nextIndex;
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -46,6 +64,7 @@ class _OfficialEmojiPickerState extends State<OfficialEmojiPicker> {
 
   @override
   void dispose() {
+    EmojiRequest.changes.removeListener(_onCatalogChanged);
     _openingAnimation?.removeStatusListener(_onAnimationStatus);
     super.dispose();
   }
@@ -69,7 +88,7 @@ class _OfficialEmojiPickerState extends State<OfficialEmojiPicker> {
       imageUrl: url,
       fit: BoxFit.contain,
       // 按缩略图尺寸解码，避免分类头图和表情原图占用过多内存。
-      memCacheWidth: (displayWidth * MediaQuery.devicePixelRatioOf(context)).ceil(),
+      memCacheWidth: ImageDecodeSize.width(context, displayWidth),
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
       placeholder: (_, __) => const Center(child: Icon(Icons.image_outlined, color: Colors.grey)),

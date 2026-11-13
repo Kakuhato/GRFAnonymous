@@ -1,14 +1,13 @@
+import '../utils/image_decode_size.dart';
 import 'game_data_page.dart';
+import 'settings_page.dart';
 import 'widgets/endless_rank_icon.dart';
 import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
-import 'package:grfanonymous/pageRequest/loginRequest.dart';
 import 'package:grfanonymous/pageRequest/myPageRequest.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
-import 'package:grfanonymous/pages/loginPage.dart';
 import 'package:grfanonymous/pages/webViewPage.dart';
-import 'package:grfanonymous/ui/bottomSheet.dart';
 import 'package:grfanonymous/utils/routeUtil.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -118,37 +117,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
           actions: [
             IconButton(
                 onPressed: () {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    backgroundColor: Colors.black,
-                    (_) => Column(
-                      children: [
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
-                          ),
-                          child: ListTile(
-                            // leading: const Icon(Icons.settings),
-                            title: const Text(
-                              "退出登录",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            onTap: () {
-                              RouteUtils.pushAndRemove(
-                                  context, const LoginPage());
-                              LoginRequest.exit();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                  RouteUtils.push(context, const SettingsPage());
                 },
                 icon: Icon(
                   Icons.settings_outlined,
@@ -195,6 +164,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                               child: CachedNetworkImage(
                                 imageUrl:
                                     "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
+                                memCacheWidth: ImageDecodeSize.screen(context),
                                 fit: BoxFit.contain,
                               ),
                             ),
@@ -206,6 +176,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                             child: ClipOval(
                               child: CachedNetworkImage(
                                 imageUrl: myPageRequest.userData.avatar,
+                                memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.userAvatarSize),
                                 fit: BoxFit.cover,
                                 width: UiSizeUtil.userAvatarSize,
                                 height: UiSizeUtil.userAvatarSize,
@@ -442,6 +413,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                 CachedNetworkImage(
                   imageUrl:
                       "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png",
+                  memCacheWidth: ImageDecodeSize.screen(context),
                   fit: BoxFit.contain,
                 ),
                 Positioned(
@@ -456,6 +428,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                         children: [
                           CachedNetworkImage(
                             imageUrl: myPageRequest.gameData.userInfo.avatar,
+                            memCacheWidth: ImageDecodeSize.width(context, 60),
                             height: 60,
                             width: 60,
                             fit: BoxFit.cover,
@@ -600,6 +573,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                 ClipOval(
                     child: CachedNetworkImage(
                   imageUrl: topic.userAvatar,
+                  memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.homePageAvatarSize),
                   width: UiSizeUtil.homePageAvatarSize,
                   height: UiSizeUtil.homePageAvatarSize,
                 )),
@@ -676,6 +650,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                       ),
                       child: CachedNetworkImage(
                         imageUrl: topic.picList[index],
+                        memCacheWidth: ImageDecodeSize.width(context, MediaQuery.sizeOf(context).width / topic.picList.length),
                       ),
                     ),
                   ));
@@ -929,6 +904,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                 ClipOval(
                     child: CachedNetworkImage(
                   imageUrl: topic.userAvatar,
+                  memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.homePageAvatarSize),
                   width: UiSizeUtil.homePageAvatarSize,
                   height: UiSizeUtil.homePageAvatarSize,
                 )),
@@ -1005,6 +981,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                       ),
                       child: CachedNetworkImage(
                         imageUrl: topic.picList[index],
+                        memCacheWidth: ImageDecodeSize.width(context, MediaQuery.sizeOf(context).width / topic.picList.length),
                       ),
                     ),
                   ));

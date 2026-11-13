@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/ui/image_gallery.dart';
+import '../../utils/image_decode_size.dart';
 
 /// 单图保留比例，多图以三列宽度展示，图片原始尺寸不会决定卡片宽高。
 class HomeTopicImages extends StatelessWidget {
@@ -22,6 +23,7 @@ class HomeTopicImages extends StatelessWidget {
         builder: (context, constraints) {
           if (urls.length == 1) {
             final width = math.min(constraints.maxWidth, 190.0);
+            final decodeWidth = ImageDecodeSize.width(context, width);
             return GestureDetector(
               onTap: () => showImageGallery(context, images: urls),
               child: Align(
@@ -32,9 +34,11 @@ class HomeTopicImages extends StatelessWidget {
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
                     imageUrl: urls.single,
+                    memCacheWidth: decodeWidth,
                     // Image 在有限约束内按原始比例计算尺寸，竖图不会拉满整行。
                     imageBuilder: (context, provider) => Image(
-                      image: provider,
+                      // imageBuilder 收到的仍是原始 Provider，需使用相同的解码键。
+                      image: ResizeImage.resizeIfNeeded(decodeWidth, null, provider),
                       fit: BoxFit.contain,
                     ),
                     placeholder: (_, __) => SizedBox(
@@ -78,6 +82,7 @@ class HomeTopicImages extends StatelessWidget {
                       children: [
                         CachedNetworkImage(
                           imageUrl: urls[index],
+                          memCacheWidth: ImageDecodeSize.width(context, side * 2),
                           fit: BoxFit.cover,
                           placeholder: (_, __) => const _ImagePlaceholder(),
                           errorWidget: (_, __, ___) =>

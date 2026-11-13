@@ -15,7 +15,7 @@ class CookieInterceptor {
     cookieManager = CookieManager(cookieJar!);
   }
 
-  static clear() {
-    cookieJar!.deleteAll();
+  static Future<void> clear() async {
+    await cookieJar?.deleteAll();
   }
 }

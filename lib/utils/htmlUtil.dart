@@ -6,6 +6,7 @@ import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'package:html/dom.dart' as dom;
 
 import 'image_actions.dart';
+import 'image_decode_size.dart';
 
 class MyWidgetFactory extends WidgetFactory {
   final BuildContext context;
@@ -22,6 +23,10 @@ class MyWidgetFactory extends WidgetFactory {
       onLongPress: () => ImageActions.showSaveMenu(context, url),
       child: CachedNetworkImage(
         imageUrl: url,
+        // 只指定宽度，长图和表情保持原有宽高比。大图预览仍读取原图。
+        memCacheWidth: isEmoji
+            ? ImageDecodeSize.width(context, UiSizeUtil.emojiSize)
+            : ImageDecodeSize.screen(context),
         width: isEmoji ? UiSizeUtil.emojiSize : null,
         height: isEmoji ? UiSizeUtil.emojiSize : null,
         placeholder: (_, __) => const Center(

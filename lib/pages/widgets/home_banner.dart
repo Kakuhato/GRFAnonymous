@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:grfanonymous/models/bannerItem.dart';
+import '../../utils/image_decode_size.dart';
 
 class HomeBanner extends StatelessWidget {
   const HomeBanner({super.key, required this.banners});
@@ -34,6 +35,7 @@ class HomeBanner extends StatelessWidget {
                 height: 150,
                 child: CachedNetworkImage(
                   imageUrl: banners[index].imgAddr,
+                  memCacheWidth: ImageDecodeSize.screen(context),
                   fit: BoxFit.contain,
                 ),
               ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'app_image_cache.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -28,7 +28,7 @@ class ImageActions {
         showToast('没有存储权限');
         return;
       }
-      final file = await DefaultCacheManager().getSingleFile(url);
+      final file = await AppImageCache.instance.originalFile(url);
       final result = await ImageGallerySaverPlus.saveFile(
         file.path,
         name: 'grfa_${DateTime.now().millisecondsSinceEpoch}',

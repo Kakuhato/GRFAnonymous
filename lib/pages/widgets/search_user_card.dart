@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../models/search_user.dart';
+import '../../utils/image_decode_size.dart';
 import 'topic_identity_badge.dart';
 
 class SearchUserCard extends StatelessWidget {
@@ -25,6 +26,7 @@ class SearchUserCard extends StatelessWidget {
                   ? const Icon(Icons.account_circle, size: 44, color: Colors.grey)
                   : CachedNetworkImage(
                       imageUrl: user.avatar,
+                      memCacheWidth: ImageDecodeSize.width(context, 44),
                       fit: BoxFit.cover,
                       errorWidget: (_, __, ___) => const Icon(Icons.account_circle, size: 44, color: Colors.grey),
                     ),

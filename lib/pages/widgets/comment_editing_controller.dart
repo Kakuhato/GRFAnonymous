@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../utils/image_decode_size.dart';
 import 'package:flutter/material.dart';
 
 import '../../pageRequest/emoji_request.dart';
@@ -122,7 +123,7 @@ class CommentEditingController extends TextEditingController {
                 child: CachedNetworkImage(
                   imageUrl: emoji.url,
                   fit: BoxFit.contain,
-                  memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                  memCacheWidth: ImageDecodeSize.width(context, size),
                   fadeInDuration: Duration.zero,
                   fadeOutDuration: Duration.zero,
                   placeholder: (_, __) => const Icon(Icons.image_outlined, color: Colors.grey),

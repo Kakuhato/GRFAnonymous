@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../models/userData.dart';
+import '../../utils/image_decode_size.dart';
 
 class GameHeroCard extends StatelessWidget {
   const GameHeroCard({super.key, required this.hero});
@@ -29,6 +30,7 @@ class GameHeroCard extends StatelessWidget {
             else
               CachedNetworkImage(
                 imageUrl: imageUrl,
+                memCacheWidth: ImageDecodeSize.width(context, width),
                 width: width,
                 fit: BoxFit.fitWidth,
                 placeholder: (_, __) => fallback,

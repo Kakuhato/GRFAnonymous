@@ -4,6 +4,7 @@ import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'topic_identity_badge.dart';
 import 'endless_rank_icon.dart';
+import '../../utils/image_decode_size.dart';
 
 /// 帖子作者资料，仅展示接口返回的信息，不依赖页面或请求对象。
 class HomeTopicAuthor extends StatelessWidget {
@@ -40,6 +41,7 @@ class HomeTopicAuthor extends StatelessWidget {
                   child: ClipOval(
                     child: CachedNetworkImage(
                       imageUrl: topic.userAvatar,
+                      memCacheWidth: ImageDecodeSize.width(context, avatarSize),
                       fit: BoxFit.cover,
                       errorWidget: (_, __, ___) =>
                           const Icon(Icons.account_circle, color: Colors.grey),
@@ -51,6 +53,7 @@ class HomeTopicAuthor extends StatelessWidget {
                 Positioned.fill(
                   child: CachedNetworkImage(
                     imageUrl: topic.avatarFrame,
+                    memCacheWidth: ImageDecodeSize.width(context, avatarSize + 8),
                     fit: BoxFit.contain,
                     errorWidget: (_, __, ___) => const SizedBox.shrink(),
                   ),

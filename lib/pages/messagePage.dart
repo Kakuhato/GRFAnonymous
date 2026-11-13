@@ -1,3 +1,4 @@
+import '../utils/image_decode_size.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/cupertino.dart';
@@ -303,6 +304,7 @@ class _MessagePageState extends State<MessagePage>
                       ClipOval(
                         child: CachedNetworkImage(
                           imageUrl: item.avatarUrl,
+                          memCacheWidth: ImageDecodeSize.width(context, 40),
                           width: 40,
                           height: 40,
                         ),
@@ -403,6 +405,7 @@ class _MessagePageState extends State<MessagePage>
                       ClipOval(
                         child: CachedNetworkImage(
                           imageUrl: item.avatarUrl,
+                          memCacheWidth: ImageDecodeSize.width(context, 40),
                           width: 40,
                           height: 40,
                         ),
@@ -496,6 +499,7 @@ class _MessagePageState extends State<MessagePage>
                       ClipOval(
                         child: CachedNetworkImage(
                           imageUrl: item.avatarUrl,
+                          memCacheWidth: ImageDecodeSize.width(context, 40),
                           width: 40,
                           height: 40,
                         ),

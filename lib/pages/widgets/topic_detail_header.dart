@@ -4,6 +4,7 @@ import 'package:grfanonymous/models/webViewContent.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'topic_identity_badge.dart';
 import 'endless_rank_icon.dart';
+import '../../utils/image_decode_size.dart';
 
 class TopicDetailHeader extends StatelessWidget {
   const TopicDetailHeader({
@@ -48,6 +49,7 @@ class TopicDetailHeader extends StatelessWidget {
                                 child: ClipOval(
                                   child: CachedNetworkImage(
                                     imageUrl: topic.userAvatar,
+                                    memCacheWidth: ImageDecodeSize.width(context, 40),
                                     fit: BoxFit.cover,
                                     errorWidget: (_, __, ___) =>
                                         const Icon(Icons.account_circle),
@@ -59,6 +61,7 @@ class TopicDetailHeader extends StatelessWidget {
                               Positioned.fill(
                                 child: CachedNetworkImage(
                                   imageUrl: topic.avatarFrame,
+                                  memCacheWidth: ImageDecodeSize.width(context, 48),
                                   fit: BoxFit.contain,
                                   errorWidget: (_, __, ___) =>
                                       const SizedBox.shrink(),

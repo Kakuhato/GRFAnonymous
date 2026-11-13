@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../models/userData.dart';
+import '../../utils/image_decode_size.dart';
 
 /// 周常战绩使用浅色背景，文字位于图片右侧的留白区。
 class GameWeeklyStageBanner extends StatelessWidget {
@@ -21,6 +22,7 @@ class GameWeeklyStageBanner extends StatelessWidget {
             else
               CachedNetworkImage(
                 imageUrl: stage.image,
+                memCacheWidth: ImageDecodeSize.width(context, constraints.maxWidth),
                 fit: BoxFit.cover,
                 placeholder: (_, __) => const Center(child: Icon(Icons.image_outlined, color: Colors.grey)),
                 errorWidget: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined, color: Colors.grey)),

@@ -1,3 +1,4 @@
+import '../utils/image_decode_size.dart';
 import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -142,6 +143,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                         child: CachedNetworkImage(
                           imageUrl:
                               "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/mine_bg.91cacca5.png",
+                          memCacheWidth: ImageDecodeSize.screen(context),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -152,6 +154,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                         child: ClipOval(
                           child: CachedNetworkImage(
                             imageUrl: myPageRequest.userData.avatar,
+                            memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.userAvatarSize),
                             fit: BoxFit.cover,
                             width: UiSizeUtil.userAvatarSize,
                             height: UiSizeUtil.userAvatarSize,
@@ -400,6 +403,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                 CachedNetworkImage(
                   imageUrl:
                       "https://gf2-cn.cdn.sunborngame.com/website/official/source/bbsm1727171280566/img/data_bg.e722b1ec.png",
+                  memCacheWidth: ImageDecodeSize.screen(context),
                   fit: BoxFit.contain,
                 ),
                 Positioned(
@@ -416,6 +420,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                             imageUrl: myPageRequest.gameData.userInfo.avatar.isEmpty
                                 ? myPageRequest.userData.avatar
                                 : myPageRequest.gameData.userInfo.avatar,
+                            memCacheWidth: ImageDecodeSize.width(context, 40),
                             height: 40,
                             width: 40,
                             fit: BoxFit.cover,
@@ -560,6 +565,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                 ClipOval(
                     child: CachedNetworkImage(
                   imageUrl: topic.userAvatar,
+                  memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.homePageAvatarSize),
                   width: UiSizeUtil.homePageAvatarSize,
                   height: UiSizeUtil.homePageAvatarSize,
                 )),
@@ -636,6 +642,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                       ),
                       child: CachedNetworkImage(
                         imageUrl: topic.picList[index],
+                        memCacheWidth: ImageDecodeSize.width(context, MediaQuery.sizeOf(context).width / topic.picList.length),
                       ),
                     ),
                   ));
@@ -910,6 +917,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                 ClipOval(
                     child: CachedNetworkImage(
                   imageUrl: topic.userAvatar,
+                  memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.homePageAvatarSize),
                   width: UiSizeUtil.homePageAvatarSize,
                   height: UiSizeUtil.homePageAvatarSize,
                 )),
@@ -986,6 +994,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                       ),
                       child: CachedNetworkImage(
                         imageUrl: topic.picList[index],
+                        memCacheWidth: ImageDecodeSize.width(context, MediaQuery.sizeOf(context).width / topic.picList.length),
                       ),
                     ),
                   ));

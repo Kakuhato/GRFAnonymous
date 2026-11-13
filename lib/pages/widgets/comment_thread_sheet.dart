@@ -84,15 +84,17 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
     super.dispose();
   }
 
-  void _notify() {
+  void _notify({bool dataChanged = false}) {
     if (!mounted) return;
     _changes.value++;
     final parent = _parent;
-    if (parent != null) widget.onChanged?.call(parent);
+    // 等待请求、按钮禁用等状态仅属于弹层；数据改变才同步对应楼层。
+    if (dataChanged && parent != null) widget.onChanged?.call(parent);
   }
 
   Future<void> _load() async {
     _loading = true;
+    var dataChanged = false;
     try {
       if (widget.commentId <= 0) {
         throw const TopicRequestException('消息缺少评论信息，请查看原帖');
@@ -100,9 +102,10 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
       final parent = await _request.getCommentDetail(widget.topicId, widget.commentId);
       if (!mounted) return;
       _parent = parent;
+      dataChanged = true;
     } finally {
       _loading = false;
-      _notify();
+      _notify(dataChanged: dataChanged);
     }
   }
 
@@ -112,6 +115,7 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
     final id = reply?.commentId ?? parent.commentId;
     if (!_pendingLikes.add(id)) return;
     _notify();
+    var dataChanged = false;
     try {
       final success = await _request.likeComment(widget.topicId, id);
       if (!mounted) return;
@@ -126,11 +130,12 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
         reply.isLike = !reply.isLike;
         reply.likeNum = (reply.likeNum + (reply.isLike ? 1 : -1)).clamp(0, 1 << 31).toInt();
       }
+      dataChanged = true;
     } catch (_) {
       if (mounted) showToast('操作失败，请检查网络或登录状态');
     } finally {
       _pendingLikes.remove(id);
-      _notify();
+      _notify(dataChanged: dataChanged);
     }
   }
 

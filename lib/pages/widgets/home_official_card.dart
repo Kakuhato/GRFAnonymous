@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/topicList.dart';
+import '../../utils/image_decode_size.dart';
 
 class HomeOfficialCard extends StatelessWidget {
   const HomeOfficialCard({super.key, required this.topic,
@@ -43,6 +44,7 @@ class HomeOfficialCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(3),
                     child: CachedNetworkImage(
                       imageUrl: cover,
+                      memCacheWidth: ImageDecodeSize.width(context, constraints.maxWidth * 0.32),
                       width: constraints.maxWidth * 0.32,
                       height: constraints.maxWidth * 0.18,
                       fit: BoxFit.cover,

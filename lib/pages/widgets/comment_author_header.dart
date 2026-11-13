@@ -5,6 +5,7 @@ import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'topic_author_badge.dart';
 import 'topic_identity_badge.dart';
 import 'endless_rank_icon.dart';
+import '../../utils/image_decode_size.dart';
 
 const _orange = Color(0xFFFF701F);
 
@@ -37,6 +38,7 @@ class CommentAuthorHeader extends StatelessWidget {
                     child: ClipOval(
                       child: CachedNetworkImage(
                         imageUrl: comment.userAvatar,
+                        memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.postAvatarSize),
                         fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => const Icon(Icons.account_circle),
                       ),
@@ -47,6 +49,7 @@ class CommentAuthorHeader extends StatelessWidget {
                   Positioned.fill(
                     child: CachedNetworkImage(
                       imageUrl: comment.avatarFrame,
+                      memCacheWidth: ImageDecodeSize.width(context, UiSizeUtil.postAvatarSize),
                       fit: BoxFit.contain,
                       errorWidget: (_, __, ___) => const SizedBox.shrink(),
                     ),

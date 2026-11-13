@@ -45,6 +45,8 @@ class _WebViewPageState extends State<WebViewPage> {
   bool _retryCommentsFromStart = true;
   bool _isOpeningTopicLink = false;
   final Set<int> _pendingReplyLikes = {};
+  // 数据对象本身可变，用版本通知刷新单个楼层，避免整页 setState。
+  final _commentChanges = <int, ValueNotifier<int>>{};
   bool _isFollowing = false;
   bool _composerOpen = false;
   bool _repliesSheetOpen = false;
@@ -69,6 +71,10 @@ class _WebViewPageState extends State<WebViewPage> {
       controller.dispose();
     }
     _commentDrafts.clear();
+    for (final changes in _commentChanges.values) {
+      changes.dispose();
+    }
+    _commentChanges.clear();
     super.dispose();
   }
 
@@ -519,18 +525,11 @@ class _WebViewPageState extends State<WebViewPage> {
       } else {
         final result = await webViewRequest.getCommentDetail(widget.topicId, parentId);
         if (!mounted) return true;
-        for (final reply in webViewRequest.replyList) {
-          if (reply.commentId == parentId) {
-            reply.commentReply = result.commentReply;
-            reply.replyNum = result.replyNum;
-            break;
-          }
-        }
+        _replaceComment(result);
       }
     } catch (_) {
       if (mounted) showToast('回复已提交，列表更新失败，请刷新查看');
     }
-    if (mounted) setState(() {});
     return true;
   }
 
@@ -598,14 +597,40 @@ class _WebViewPageState extends State<WebViewPage> {
   Widget _replyListBuilder() {
     return ListView.builder(
       itemBuilder: (context, index) {
-        return _replyBuilder(
-          webViewRequest.replyList[index],
+        final reply = webViewRequest.replyList[index];
+        return ValueListenableBuilder<int>(
+          key: ValueKey(reply.commentId),
+          valueListenable: _commentChanges.putIfAbsent(
+            reply.commentId, () => ValueNotifier(0)),
+          builder: (context, _, __) {
+            // 弹层会返回新的评论实例，不能一直捕获旧的 reply。
+            final items = webViewRequest.replyList;
+            if (index >= items.length || items[index].commentId != reply.commentId) {
+              return const SizedBox.shrink();
+            }
+            return _replyBuilder(items[index]);
+          },
         );
       },
       itemCount: webViewRequest.replyList.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
     );
+  }
+
+  void _notifyComment(int commentId) {
+    if (!mounted) return;
+    final changes = _commentChanges[commentId];
+    if (changes != null) changes.value++;
+  }
+
+  void _replaceComment(SingleComment updated) {
+    if (!mounted) return;
+    final index = webViewRequest.replyList.indexWhere(
+      (item) => item.commentId == updated.commentId);
+    if (index < 0) return;
+    webViewRequest.replyList[index] = updated;
+    _notifyComment(updated.commentId);
   }
 
   Widget _replyBuilder(SingleComment reply) {
@@ -624,7 +649,8 @@ class _WebViewPageState extends State<WebViewPage> {
 
   Future<void> _likeParentReply(SingleComment reply) async {
     if (_pendingReplyLikes.contains(reply.commentId)) return;
-    setState(() => _pendingReplyLikes.add(reply.commentId));
+    _pendingReplyLikes.add(reply.commentId);
+    _notifyComment(reply.commentId);
     try {
       final success = await webViewRequest.likeComment(widget.topicId, reply.commentId);
       if (!mounted) return;
@@ -632,14 +658,13 @@ class _WebViewPageState extends State<WebViewPage> {
         showToast('操作失败，请稍后重试');
         return;
       }
-      setState(() {
-        reply.isLike = !reply.isLike;
-        reply.likeNum = (reply.likeNum + (reply.isLike ? 1 : -1)).clamp(0, 1 << 31).toInt();
-      });
+      reply.isLike = !reply.isLike;
+      reply.likeNum = (reply.likeNum + (reply.isLike ? 1 : -1)).clamp(0, 1 << 31).toInt();
     } catch (_) {
       if (mounted) showToast('操作失败，请稍后重试');
     } finally {
-      if (mounted) setState(() => _pendingReplyLikes.remove(reply.commentId));
+      _pendingReplyLikes.remove(reply.commentId);
+      _notifyComment(reply.commentId);
     }
   }
 
@@ -682,23 +707,17 @@ class _WebViewPageState extends State<WebViewPage> {
           (parentId, subId), CommentEditingController.new),
         onOpenTopic: (context, topicId) => RouteUtils.push(
           context, WebViewPage(topicId: topicId)),
-        onChanged: (updated) {
-          if (!mounted) return;
-          final index = webViewRequest.replyList.indexWhere(
-            (item) => item.commentId == updated.commentId);
-          if (index >= 0) {
-            setState(() => webViewRequest.replyList[index] = updated);
-          }
-        },
+        onChanged: _replaceComment,
       );
     } finally {
       _repliesSheetOpen = false;
     }
   }
 
-  Future<void> _likeSecondaryReply(CommentReply reply) async {
+  Future<void> _likeSecondaryReply(CommentReply reply, int parentId) async {
     if (!mounted || _pendingReplyLikes.contains(reply.commentId)) return;
-    setState(() => _pendingReplyLikes.add(reply.commentId));
+    _pendingReplyLikes.add(reply.commentId);
+    _notifyComment(parentId);
     try {
       // 点赞的是楼中楼评论自身，不能使用所属楼层的 replyId。
       final success = await webViewRequest.likeComment(widget.topicId, reply.commentId);
@@ -707,21 +726,18 @@ class _WebViewPageState extends State<WebViewPage> {
         showToast('操作失败，请稍后重试');
         return;
       }
-      setState(() {
-        reply.isLike = !reply.isLike;
-        if (reply.isLike) {
-          reply.likeNum++;
-        } else if (reply.likeNum > 0) {
-          reply.likeNum--;
-        }
-      });
+      reply.isLike = !reply.isLike;
+      if (reply.isLike) {
+        reply.likeNum++;
+      } else if (reply.likeNum > 0) {
+        reply.likeNum--;
+      }
       showToast(reply.isLike ? '点赞成功' : '取消点赞');
     } catch (_) {
       if (mounted) showToast('操作失败，请检查网络或登录状态后重试');
     } finally {
-      if (mounted) {
-        setState(() => _pendingReplyLikes.remove(reply.commentId));
-      }
+      _pendingReplyLikes.remove(reply.commentId);
+      _notifyComment(parentId);
     }
   }
 
@@ -731,7 +747,7 @@ class _WebViewPageState extends State<WebViewPage> {
       topicAuthorId: webViewRequest.webViewContent.userId,
       onTapUrl: (url) => _openTopicLink(url),
       onLike: _pendingReplyLikes.contains(reply.commentId)
-          ? null : () => _likeSecondaryReply(reply),
+          ? null : () => _likeSecondaryReply(reply, replyId),
       onReply: () => _openCommentComposer(
         name: reply.userNickName, avatar: reply.userAvatar,
         parentId: replyId, subId: reply.commentId,

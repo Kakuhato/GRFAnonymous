@@ -1,3 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:grfanonymous/utils/app_image_cache.dart';
+import 'package:grfanonymous/pageRequest/emoji_request.dart';
 import 'package:grfanonymous/pageRequest/cookieInterceptor.dart';
 import 'package:grfanonymous/pageRequest/loginRequest.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
@@ -12,14 +15,15 @@ import 'package:oktoast/oktoast.dart';
 Future<void> main() async {
   // debugRepaintRainbowEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
+  CachedNetworkImageProvider.defaultCacheManager = AppImageCache.instance;
+  await EmojiRequest.initialize();
   // await Hive.init(path)
   await HiveUtil.instance().init();
   await CookieInterceptor.init();
   DioInstance.instance().initDio(
     baseUrl: "https://gf2-bbs-api.sunborngame.com/",
   );
-  imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
+  imageCache.maximumSizeBytes = 128 * 1024 * 1024;
   var page;
   if (await LoginRequest.isLogin()) {
     page = TabPage();

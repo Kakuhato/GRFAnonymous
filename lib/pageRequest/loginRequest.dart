@@ -158,8 +158,8 @@ class LoginRequest with ChangeNotifier {
     }
   }
 
-  static exit() {
-    HiveUtil.instance().setString(HiveUtil.tokenKey, "");
-    CookieInterceptor.clear();
+  static Future<void> exit() async {
+    await HiveUtil.instance().setString(HiveUtil.tokenKey, "");
+    await CookieInterceptor.clear();
   }
 }
