@@ -18,10 +18,10 @@ class ImageActions {
         ],
       ),
     );
-    if (save == true) await _save(url);
+    if (save == true) await saveImage(url);
   }
 
-  static Future<void> _save(String url) async {
+  static Future<void> saveImage(String url) async {
     try {
       final permission = await Permission.storage.request();
       if (!permission.isGranted) {

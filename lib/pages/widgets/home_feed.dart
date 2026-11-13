@@ -25,6 +25,7 @@ class HomeFeed extends StatefulWidget {
     required this.onCategorySelected,
     required this.isSwitchingCategory,
     required this.banners,
+    required this.onOpenBanner,
     required this.topics,
     required this.announcements,
     required this.onOpenAnnouncement,
@@ -42,6 +43,7 @@ class HomeFeed extends StatefulWidget {
   });
 
   final List<BannerItem> banners;
+  final ValueChanged<BannerItem> onOpenBanner;
   final CategoryId category;
   final SortType sort;
   final int officialSubId;
@@ -127,7 +129,10 @@ class _HomeFeedState extends State<HomeFeed> {
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              SliverToBoxAdapter(child: HomeBanner(banners: widget.banners)),
+              SliverToBoxAdapter(child: HomeBanner(
+                banners: widget.banners,
+                onOpen: widget.onOpenBanner,
+              )),
               SliverToBoxAdapter(
                 child: HomeShortcuts(
                   isSignedIn: widget.isSignedIn,

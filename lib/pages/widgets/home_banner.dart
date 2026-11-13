@@ -5,9 +5,10 @@ import 'package:grfanonymous/models/bannerItem.dart';
 import '../../utils/image_decode_size.dart';
 
 class HomeBanner extends StatelessWidget {
-  const HomeBanner({super.key, required this.banners});
+  const HomeBanner({super.key, required this.banners, required this.onOpen});
 
   final List<BannerItem> banners;
+  final ValueChanged<BannerItem> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +31,7 @@ class HomeBanner extends StatelessWidget {
                 ),
               ),
               itemCount: banners.length,
+              onTap: (index) => onOpen(banners[index]),
               itemBuilder: (context, index) => Container(
                 margin: const EdgeInsets.all(10),
                 height: 150,

@@ -1,5 +1,6 @@
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:grfanonymous/models/bannerItem.dart';
 import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/pageRequest/homeRequest.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
@@ -12,6 +13,7 @@ import 'package:grfanonymous/pages/webViewPage.dart';
 import 'package:grfanonymous/pages/widgets/home_feed.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'package:grfanonymous/utils/routeUtil.dart';
+import 'package:grfanonymous/utils/topic_link.dart';
 import 'package:oktoast/oktoast.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,6 +29,7 @@ class HomePageState extends State<HomePage> {
   bool _isSigningIn = false;
   bool _isFeedBusy = false;
   bool _isSwitchingCategory = false;
+  bool _isOpeningBanner = false;
   CategoryId _category = CategoryId.recommend;
   SortType _sort = SortType.reply;
   int _officialSubId = 1;
@@ -111,6 +114,22 @@ class HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _openBanner(BannerItem banner) async {
+    if (_isOpeningBanner || !mounted) return;
+    final topicId = TopicLink.parseId(banner.jumpAddr)
+        ?? TopicLink.parseHref(banner.jumpAddr);
+    if (topicId == null) {
+      showToast('该轮播图暂无可打开的帖子链接');
+      return;
+    }
+    _isOpeningBanner = true;
+    try {
+      await RouteUtils.push(context, WebViewPage(topicId: topicId));
+    } finally {
+      _isOpeningBanner = false;
+    }
+  }
+
   Future<void> _signIn() async {
     if (likeAndFollow.isSignIn) {
       showToast('今日已签到');
@@ -184,6 +203,7 @@ class HomePageState extends State<HomePage> {
         onCategorySelected: _selectCategory,
         isSwitchingCategory: _isSwitchingCategory,
         banners: homePageRequest.bannerList,
+        onOpenBanner: _openBanner,
         topics: homePageRequest.topicList,
         announcements: homePageRequest.topTopics,
         onOpenAnnouncement: (topicId) => RouteUtils.push(

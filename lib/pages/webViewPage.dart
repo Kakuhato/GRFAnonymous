@@ -161,28 +161,8 @@ class _WebViewPageState extends State<WebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || _loadError != null) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          centerTitle: true,
-          title: Text('帖子详情', style: TextStyle(fontSize: UiSizeUtil.headerFontSize)),
-        ),
-        body: Center(
-          child: isLoading
-              ? const CircularProgressIndicator()
-              : Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(_loadError!, textAlign: TextAlign.center),
-                    TextButton(onPressed: initTopic, child: const Text('重新加载')),
-                    TextButton(onPressed: () => Navigator.maybePop(context), child: const Text('返回')),
-                  ]),
-                ),
-        ),
-      );
-    }
+    // 请求成功前不读取 late 初始化的帖子数据，页眉与底栏保持同一结构。
+    final ready = !isLoading && _loadError == null;
     return Scaffold(
             // 输入由独立底部弹层避让键盘，帖子正文无需随之重新排版。
             resizeToAvoidBottomInset: false,
@@ -195,14 +175,14 @@ class _WebViewPageState extends State<WebViewPage> {
                     icon: Icon(
                       Icons.star,
                       size: UiSizeUtil.topIconSize,
-                      color: webViewRequest.webViewContent.isFavor
+                      color: !ready ? Colors.white30 : webViewRequest.webViewContent.isFavor
                           ? const Color.fromRGBO(242, 108, 28, 1)
                           : Colors.white,
                     ),
-                    onPressed: () async {
+                    onPressed: !ready ? null : () async {
                       bool result =
                           await webViewRequest.favorTopic(widget.topicId);
-                      if (result) {
+                      if (result && mounted) {
                         setState(() {
                           webViewRequest.webViewContent.isFavor =
                               !webViewRequest.webViewContent.isFavor;
@@ -222,9 +202,9 @@ class _WebViewPageState extends State<WebViewPage> {
                     icon: Icon(
                       Icons.open_in_new,
                       size: UiSizeUtil.topIconSize,
-                      color: Colors.white,
+                      color: ready ? Colors.white : Colors.white30,
                     ),
-                    onPressed: () async {
+                    onPressed: !ready ? null : () async {
                       final topic = webViewRequest.webViewContent;
                       final textToCopy = TopicLink.shareText(
                         topicId: widget.topicId,
@@ -241,15 +221,15 @@ class _WebViewPageState extends State<WebViewPage> {
                   ),
                   IconButton(
                     icon: Icon(
-                      color: webViewRequest.webViewContent.isLike
+                      color: !ready ? Colors.white30 : webViewRequest.webViewContent.isLike
                           ? const Color.fromRGBO(242, 108, 28, 1)
                           : Colors.white,
                       Icons.thumb_up_off_alt,
                       size: UiSizeUtil.topIconSize,
                     ),
-                    onPressed: () async {
+                    onPressed: !ready ? null : () async {
                       bool result = await likeAndFollow.like(widget.topicId);
-                      if (result) {
+                      if (result && mounted) {
                         setState(() {
                           webViewRequest.webViewContent.isLike =
                               !webViewRequest.webViewContent.isLike;
@@ -272,7 +252,27 @@ class _WebViewPageState extends State<WebViewPage> {
                 ),
               ),
             ),
-            body: EasyRefresh(
+            body: _pageBody(),
+            bottomNavigationBar: _bottomInputBar(enabled: ready),
+          );
+  }
+
+  Widget _pageBody() {
+    // 只构建当前状态，不让隐藏的正文、图片或评论参与布局。
+    if (isLoading) return const Center(child: CircularProgressIndicator());
+    if (_loadError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(_loadError!, textAlign: TextAlign.center),
+            TextButton(onPressed: initTopic, child: const Text('重新加载')),
+            TextButton(onPressed: () => Navigator.maybePop(context), child: const Text('返回')),
+          ]),
+        ),
+      );
+    }
+    return EasyRefresh(
               triggerAxis: Axis.vertical,
               header: const MaterialHeader(),
               refreshOnStart: true,
@@ -316,9 +316,7 @@ class _WebViewPageState extends State<WebViewPage> {
                   ])),
                 ],
               ),
-            ),
-            bottomNavigationBar: _bottomInputBar(),
-          );
+            );
   }
 
   Widget _queryBuilder() {
@@ -455,7 +453,7 @@ class _WebViewPageState extends State<WebViewPage> {
     }
   }
 
-  Widget _bottomInputBar() {
+  Widget _bottomInputBar({required bool enabled}) {
     return SafeArea(
       top: false,
       child: Container(
@@ -463,7 +461,7 @@ class _WebViewPageState extends State<WebViewPage> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         child: Row(children: [
             Expanded(child: InkWell(
-              onTap: () => _openCommentComposer(),
+              onTap: enabled ? () => _openCommentComposer() : null,
               child: Container(
               height: 40,
               alignment: Alignment.centerLeft,
@@ -475,7 +473,7 @@ class _WebViewPageState extends State<WebViewPage> {
             ))),
             const SizedBox(width: 10),
             InkWell(
-              onTap: _onCommentButtonTap,
+              onTap: enabled ? _onCommentButtonTap : null,
               child: SizedBox(
                 height: 40,
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -484,7 +482,7 @@ class _WebViewPageState extends State<WebViewPage> {
                     height: UiSizeUtil.postCommentLikeIconSize),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Text('${webViewRequest.webViewContent.commentNum}',
+                    child: Text(enabled ? '${webViewRequest.webViewContent.commentNum}' : '—',
                       style: TextStyle(fontSize: UiSizeUtil.postCommentLikeFontSize, color: Colors.grey)),
                   ),
                 ]),

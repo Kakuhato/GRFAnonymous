@@ -37,6 +37,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
   final _viewportKey = GlobalKey();
   late int _index;
   double _scale = 1;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -75,6 +76,17 @@ class _ImageGalleryState extends State<_ImageGallery> {
   }
 
   void _close() => Navigator.of(context).pop();
+
+  Future<void> _saveCurrentImage() async {
+    if (_isSaving) return;
+    final url = widget.images[_index];
+    setState(() => _isSaving = true);
+    try {
+      await ImageActions.saveImage(url);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -206,9 +218,8 @@ class _ImageGalleryState extends State<_ImageGallery> {
                     IconButton(
                       tooltip: '保存当前图片',
                       color: Colors.white,
-                      onPressed: () => ImageActions.showSaveMenu(
-                        context, widget.images[_index],
-                      ),
+                      disabledColor: Colors.white30,
+                      onPressed: _isSaving ? null : _saveCurrentImage,
                       icon: const Icon(Icons.download_outlined),
                     ),
                   ],
