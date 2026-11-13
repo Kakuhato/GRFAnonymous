@@ -16,6 +16,7 @@ import '../pageRequest/notificationPageRequest/followNotificationRequest.dart';
 import '../pageRequest/notificationPageRequest/replyNotificationRequest.dart';
 import '../ui/uiSizeUtil.dart';
 import '../utils/routeUtil.dart';
+import 'widgets/comment_thread_sheet.dart';
 
 class MessagePage extends StatefulWidget {
   const MessagePage({super.key});
@@ -27,6 +28,8 @@ class MessagePage extends StatefulWidget {
 class _MessagePageState extends State<MessagePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _replySheetOpen = false;
+  Future<IndicatorResult>? _refreshFuture;
 
   ReplyNotificationRequest replyNotificationRequest =
       ReplyNotificationRequest();
@@ -42,12 +45,24 @@ class _MessagePageState extends State<MessagePage>
     _tabController = TabController(length: 4, vsync: this);
   }
 
-  _notificationListInit() async {
-    await replyNotificationRequest.getReplyNotification(true);
-    await likeNotificationRequest.getLikeNotification(true);
-    await followNotificationRequest.getFollowNotification(true);
-    await infoNotificationRequest.getInfoNotification(true);
-    setState(() {});
+  Future<IndicatorResult> _notificationListInit() {
+    return _refreshFuture ??= _refreshNotifications();
+  }
+
+  Future<IndicatorResult> _refreshNotifications() async {
+    try {
+      await replyNotificationRequest.getReplyNotification(true);
+      await likeNotificationRequest.getLikeNotification(true);
+      await followNotificationRequest.getFollowNotification(true);
+      await infoNotificationRequest.getInfoNotification(true);
+      return IndicatorResult.success;
+    } catch (_) {
+      if (mounted) showToast('消息刷新失败，请稍后重试');
+      return IndicatorResult.fail;
+    } finally {
+      _refreshFuture = null;
+      if (mounted) setState(() {});
+    }
   }
 
   _clearAll() {
@@ -79,6 +94,8 @@ class _MessagePageState extends State<MessagePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // 回复弹层自行避让键盘，消息列表不跟随键盘重新布局。
+      resizeToAvoidBottomInset: false,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(UiSizeUtil.headerHeight),
         child: AppBar(
@@ -180,48 +197,78 @@ class _MessagePageState extends State<MessagePage>
     );
   }
 
-  Widget _buildRplyTab() {
-    return EasyRefresh(
+  Widget _buildNotificationList({
+    required String storageKey,
+    required int itemCount,
+    required int total,
+    required IndexedWidgetBuilder itemBuilder,
+    required Future<void> Function() onLoad,
+  }) {
+    final hasMore = itemCount < total;
+    return EasyRefresh.builder(
+      fit: StackFit.expand,
       header: const MaterialHeader(),
-      // footer: const MaterialFooter(),
-      onRefresh: () async {
-        _notificationListInit(); //刷新
-        setState(() {});
-      },
-      onLoad: replyNotificationRequest.replyList.length !=
-              replyNotificationRequest.total
-          ? () async {
-              await replyNotificationRequest.getReplyNotification(false);
-              setState(() {});
-            }
-          : null,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: replyNotificationRequest.replyList.length,
-              itemBuilder: (context, index) {
-                return _replyTab(replyNotificationRequest.replyList[index]);
-              },
-            ),
-            if (replyNotificationRequest.replyList.length ==
-                replyNotificationRequest.total)
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 10),
-                child: const Text(
-                  "没有更多了",
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color.fromRGBO(150, 151, 153, 1),
-                  ),
-                ),
-              ),
-          ],
-        ),
+      onRefresh: _notificationListInit,
+      onLoad: hasMore ? () async {
+        try {
+          // 其他标签也可能正在刷新，分页应等待刷新后的页码。
+          final refreshing = _refreshFuture;
+          if (refreshing != null && await refreshing != IndicatorResult.success) {
+            return IndicatorResult.fail;
+          }
+          if (!mounted) return IndicatorResult.fail;
+          await onLoad();
+          return IndicatorResult.success;
+        } catch (_) {
+          if (mounted) showToast('消息加载失败，请稍后重试');
+          return IndicatorResult.fail;
+        } finally {
+          if (mounted) setState(() {});
+        }
+      } : null,
+      childBuilder: (context, physics) => ListView.builder(
+        key: PageStorageKey('message_$storageKey'),
+        padding: EdgeInsets.zero,
+        // 保留刷新组件的回弹逻辑；其默认父级允许空列表和短列表拖动。
+        physics: physics,
+        itemCount: itemCount + (hasMore ? 0 : 1),
+        itemBuilder: (context, index) {
+          if (index < itemCount) return itemBuilder(context, index);
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Text('没有更多了', textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 10, color: Color(0xFF969799))),
+          );
+        },
       ),
     );
+  }
+
+  Widget _buildRplyTab() {
+    final items = List.of(replyNotificationRequest.replyList);
+    return _buildNotificationList(
+      storageKey: 'replies',
+      itemCount: items.length,
+      total: replyNotificationRequest.total,
+      itemBuilder: (context, index) => _replyTab(items[index]),
+      onLoad: () async { await replyNotificationRequest.getReplyNotification(false); },
+    );
+  }
+
+  Future<void> _openReplyThread(ReplyItem item) async {
+    if (_replySheetOpen) return;
+    _replySheetOpen = true;
+    try {
+      await showCommentThreadSheet(
+        context: context,
+        topicId: item.topicId.toString(), commentId: item.commentId,
+        showOriginalTopic: true,
+        onOpenTopic: (context, topicId) => RouteUtils.push(
+          context, WebViewPage(topicId: topicId)),
+      );
+    } finally {
+      _replySheetOpen = false;
+    }
   }
 
   Widget _replyTab(ReplyItem item) {
@@ -309,58 +356,18 @@ class _MessagePageState extends State<MessagePage>
           ],
         ),
       ),
-      onTap: () {
-        RouteUtils.push(
-          context,
-          WebViewPage(
-            topicId: item.topicId.toString(),
-          ),
-        );
-      },
+      onTap: () => _openReplyThread(item),
     );
   }
 
   Widget _buildLikesTab() {
-    return EasyRefresh(
-      header: const MaterialHeader(),
-      // footer: const MaterialFooter(),
-      onRefresh: () async {
-        _notificationListInit();
-        setState(() {});
-      },
-      onLoad: likeNotificationRequest.likeList.length !=
-              likeNotificationRequest.total
-          ? () async {
-              await likeNotificationRequest.getLikeNotification(false);
-              setState(() {});
-            }
-          : null,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: likeNotificationRequest.likeList.length,
-              itemBuilder: (context, index) {
-                return _likeTab(likeNotificationRequest.likeList[index]);
-              },
-            ),
-            if (likeNotificationRequest.likeList.length ==
-                likeNotificationRequest.total)
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 10),
-                child: const Text(
-                  "没有更多了",
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color.fromRGBO(150, 151, 153, 1),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    final items = List.of(likeNotificationRequest.likeList);
+    return _buildNotificationList(
+      storageKey: 'likes',
+      itemCount: items.length,
+      total: likeNotificationRequest.total,
+      itemBuilder: (context, index) => _likeTab(items[index]),
+      onLoad: () async { await likeNotificationRequest.getLikeNotification(false); },
     );
   }
 
@@ -447,46 +454,13 @@ class _MessagePageState extends State<MessagePage>
   }
 
   Widget _buildFollowingTab() {
-    return EasyRefresh(
-      header: const MaterialHeader(),
-      // footer: const MaterialFooter(),
-      onRefresh: () async {
-        _notificationListInit();
-        setState(() {});
-      },
-      onLoad: followNotificationRequest.followList.length !=
-              followNotificationRequest.total
-          ? () async {
-              await followNotificationRequest.getFollowNotification(false);
-              setState(() {});
-            }
-          : null,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: followNotificationRequest.followList.length,
-              itemBuilder: (context, index) {
-                return _followTab(followNotificationRequest.followList[index]);
-              },
-            ),
-            if (followNotificationRequest.followList.length ==
-                followNotificationRequest.total)
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 10),
-                child: const Text(
-                  "没有更多了",
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color.fromRGBO(150, 151, 153, 1),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    final items = List.of(followNotificationRequest.followList);
+    return _buildNotificationList(
+      storageKey: 'follows',
+      itemCount: items.length,
+      total: followNotificationRequest.total,
+      itemBuilder: (context, index) => _followTab(items[index]),
+      onLoad: () async { await followNotificationRequest.getFollowNotification(false); },
     );
   }
 
@@ -572,46 +546,13 @@ class _MessagePageState extends State<MessagePage>
   }
 
   Widget _buildInfoTab() {
-    return EasyRefresh(
-      header: const MaterialHeader(),
-      // footer: const MaterialFooter(),
-      onRefresh: () async {
-        _notificationListInit();
-        setState(() {});
-      },
-      onLoad: infoNotificationRequest.infoList.length !=
-              infoNotificationRequest.total
-          ? () async {
-              await infoNotificationRequest.getInfoNotification(false);
-              setState(() {});
-            }
-          : null,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: infoNotificationRequest.infoList.length,
-              itemBuilder: (context, index) {
-                return _infoTab(infoNotificationRequest.infoList[index]);
-              },
-            ),
-            if (infoNotificationRequest.infoList.length ==
-                infoNotificationRequest.total)
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 10),
-                child: const Text(
-                  "没有更多了",
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color.fromRGBO(150, 151, 153, 1),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    final items = List.of(infoNotificationRequest.infoList);
+    return _buildNotificationList(
+      storageKey: 'info',
+      itemCount: items.length,
+      total: infoNotificationRequest.total,
+      itemBuilder: (context, index) => _infoTab(items[index]),
+      onLoad: () async { await infoNotificationRequest.getInfoNotification(false); },
     );
   }
 

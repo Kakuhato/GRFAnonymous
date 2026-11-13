@@ -181,7 +181,7 @@ class _GameDataPageState extends State<GameDataPage> {
     final items = <String, String>{
       '人形收集数': '${base.heroCount}',
       '活跃天数': '${base.activeDays}',
-      '主线进度': base.mainStage,
+      '战勋记录': base.achievementReward,
       '衣装收集数': '${base.skinCount}',
       '武器收集数': '${base.weaponCount}',
       '里程碑': '${base.achievementCount}',

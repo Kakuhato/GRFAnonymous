@@ -1,8 +1,7 @@
-import 'widgets/topic_author_badge.dart';
 import 'widgets/topic_detail_header.dart';
 import 'widgets/topic_detail_metadata.dart';
-import 'widgets/comment_author_header.dart';
-import 'widgets/comment_replies_sheet.dart';
+import 'widgets/comment_cards.dart';
+import 'widgets/comment_thread_sheet.dart';
 import 'widgets/comment_composer_sheet.dart';
 import 'widgets/comment_editing_controller.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +10,7 @@ import 'package:grfanonymous/pageRequest/webViewRequest.dart';
 import 'package:grfanonymous/utils/htmlUtil.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:oktoast/oktoast.dart';
 
@@ -45,9 +45,11 @@ class _WebViewPageState extends State<WebViewPage> {
   bool _retryCommentsFromStart = true;
   bool _isOpeningTopicLink = false;
   final Set<int> _pendingReplyLikes = {};
-  final _replyChanges = ValueNotifier(0);
   bool _isFollowing = false;
   bool _composerOpen = false;
+  bool _repliesSheetOpen = false;
+  final _commentsStartKey = GlobalKey();
+  bool _scrollingToComments = false;
   // 仅当前帖子页面内保留，按一级评论和楼中楼目标区分草稿。
   final _commentDrafts = <(int, int), CommentEditingController>{};
   String selectedOption1 = "所有评论";
@@ -67,7 +69,6 @@ class _WebViewPageState extends State<WebViewPage> {
       controller.dispose();
     }
     _commentDrafts.clear();
-    _replyChanges.dispose();
     super.dispose();
   }
 
@@ -321,6 +322,7 @@ class _WebViewPageState extends State<WebViewPage> {
 
   Widget _queryBuilder() {
     return Container(
+      key: _commentsStartKey,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -405,16 +407,45 @@ class _WebViewPageState extends State<WebViewPage> {
     // showToast("已选择: $newValue");
   }
 
+  Future<void> _onCommentButtonTap() async {
+    if (_scrollingToComments) return;
+    final anchorContext = _commentsStartKey.currentContext;
+    final anchor = anchorContext?.findRenderObject();
+    if (anchorContext == null || anchor == null || !anchor.attached) return;
+    final scrollable = Scrollable.maybeOf(anchorContext);
+    final viewport = RenderAbstractViewport.maybeOf(anchor);
+    if (scrollable == null || viewport == null) return;
+    final position = scrollable.position;
+    if (!position.hasContentDimensions) return;
+
+    // 筛选栏完整进入可视区域，或已经向下滚过它，就视为到达评论区。
+    final visibleOffset = viewport.getOffsetToReveal(anchor, 1).offset;
+    if (position.pixels >= visibleOffset - 1) {
+      await _openCommentComposer();
+      return;
+    }
+
+    final target = viewport.getOffsetToReveal(anchor, 0).offset
+        .clamp(position.minScrollExtent, position.maxScrollExtent).toDouble();
+    _scrollingToComments = true;
+    try {
+      await position.animateTo(target,
+          duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
+    } finally {
+      _scrollingToComments = false;
+    }
+  }
+
   Widget _bottomInputBar() {
     return SafeArea(
       top: false,
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        child: InkWell(
-          onTap: () => _openCommentComposer(),
-          child: Row(children: [
-            Expanded(child: Container(
+        child: Row(children: [
+            Expanded(child: InkWell(
+              onTap: () => _openCommentComposer(),
+              child: Container(
               height: 40,
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -422,18 +453,25 @@ class _WebViewPageState extends State<WebViewPage> {
                 color: Colors.grey[200], borderRadius: BorderRadius.circular(20),
               ),
               child: const Text('说点什么...', style: TextStyle(color: Colors.grey)),
-            )),
+            ))),
             const SizedBox(width: 10),
-            Image.asset('assets/comments.png',
-              width: UiSizeUtil.postCommentLikeIconSize,
-              height: UiSizeUtil.postCommentLikeIconSize),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: Text('${webViewRequest.webViewContent.commentNum}',
-                style: TextStyle(fontSize: UiSizeUtil.postCommentLikeFontSize, color: Colors.grey)),
+            InkWell(
+              onTap: _onCommentButtonTap,
+              child: SizedBox(
+                height: 40,
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Image.asset('assets/comments.png',
+                    width: UiSizeUtil.postCommentLikeIconSize,
+                    height: UiSizeUtil.postCommentLikeIconSize),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: Text('${webViewRequest.webViewContent.commentNum}',
+                      style: TextStyle(fontSize: UiSizeUtil.postCommentLikeFontSize, color: Colors.grey)),
+                  ),
+                ]),
+              ),
             ),
           ]),
-        ),
       ),
     );
   }
@@ -488,7 +526,6 @@ class _WebViewPageState extends State<WebViewPage> {
             break;
           }
         }
-        _replyChanges.value++;
       }
     } catch (_) {
       if (mounted) showToast('回复已提交，列表更新失败，请刷新查看');
@@ -571,133 +608,39 @@ class _WebViewPageState extends State<WebViewPage> {
     );
   }
 
-  Widget _replyBuilder(SingleComment reply, {
-    bool showReplies = true,
-    BuildContext? sourceContext,
-    VoidCallback? onReply,
-  }) {
-    final context = sourceContext ?? this.context;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.all(8.0),
-      margin: const EdgeInsets.symmetric(horizontal: 10)
-          .add(const EdgeInsets.only(top: 10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CommentAuthorHeader(
-            comment: reply,
-            onOpenAuthor: () => RouteUtils.push(
-              context,
-              OtherUserPage(uid: reply.userId.toString()),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // 正文内容
-          Container(
-            padding: const EdgeInsets.only(
-              left: 45,
-              bottom: 5,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: SelectionArea(
-              child: HtmlWidget(
-                reply.content,
-                factoryBuilder: () => MyWidgetFactory(context),
-                onTapUrl: (url) => _openTopicLink(url, sourceContext: context),
-                customStylesBuilder: (element) {
-                  return HtmlProcess.buildCustomStyles(element);
-                },
-                textStyle: TextStyle(
-                  fontSize: UiSizeUtil.postContentFontSize,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ),
-          // 次级回复区域
-          if (showReplies) _secondaryReplyListBuilder(reply),
-
-          SizedBox(height: 8),
-          // 点赞、评论按钮区域
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  bool result = await webViewRequest.likeComment(
-                      widget.topicId, reply.commentId);
-                  if (!mounted) return;
-                  if (result) {
-                    setState(() {
-                      reply.isLike = !reply.isLike;
-                      if (reply.isLike) {
-                        reply.likeNum++;
-                      } else {
-                        reply.likeNum--;
-                      }
-                    });
-                    _replyChanges.value++;
-                    showToast(reply.isLike ? "点赞成功" : "取消点赞");
-                  }
-                },
-                child: Row(
-                  children: [
-                    Image.asset(
-                      reply.isLike ? "assets/liked.png" : "assets/likes.png",
-                      width: UiSizeUtil.postCommentLikeIconSize,
-                      height: UiSizeUtil.postCommentLikeIconSize,
-                    ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Text(
-                        reply.likeNum.toString(),
-                        style: TextStyle(
-                          fontSize: UiSizeUtil.postCommentLikeFontSize,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: onReply ?? () => _openCommentComposer(
-                  name: reply.userNickName, avatar: reply.userAvatar,
-                  parentId: reply.commentId,
-                ),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      "assets/comments.png",
-                      width: UiSizeUtil.postCommentLikeIconSize,
-                      height: UiSizeUtil.postCommentLikeIconSize,
-                    ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Text(
-                        reply.replyNum.toString(),
-                        style: TextStyle(
-                          fontSize: UiSizeUtil.postCommentLikeFontSize,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+  Widget _replyBuilder(SingleComment reply) {
+    return CommentCard(
+      reply: reply,
+      replies: _secondaryReplyListBuilder(reply),
+      onTapUrl: (url) => _openTopicLink(url),
+      onLike: _pendingReplyLikes.contains(reply.commentId)
+          ? null : () => _likeParentReply(reply),
+      onReply: () => _openCommentComposer(
+        name: reply.userNickName, avatar: reply.userAvatar,
+        parentId: reply.commentId,
       ),
     );
+  }
+
+  Future<void> _likeParentReply(SingleComment reply) async {
+    if (_pendingReplyLikes.contains(reply.commentId)) return;
+    setState(() => _pendingReplyLikes.add(reply.commentId));
+    try {
+      final success = await webViewRequest.likeComment(widget.topicId, reply.commentId);
+      if (!mounted) return;
+      if (!success) {
+        showToast('操作失败，请稍后重试');
+        return;
+      }
+      setState(() {
+        reply.isLike = !reply.isLike;
+        reply.likeNum = (reply.likeNum + (reply.isLike ? 1 : -1)).clamp(0, 1 << 31).toInt();
+      });
+    } catch (_) {
+      if (mounted) showToast('操作失败，请稍后重试');
+    } finally {
+      if (mounted) setState(() => _pendingReplyLikes.remove(reply.commentId));
+    }
   }
 
   Widget _secondaryReplyListBuilder(SingleComment parent) {
@@ -728,63 +671,34 @@ class _WebViewPageState extends State<WebViewPage> {
   }
 
   Future<void> _showAllReplies(SingleComment parent) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) => FractionallySizedBox(
-        heightFactor: 0.85,
-        child: CommentRepliesSheet(
-          changes: _replyChanges,
-          loadReplies: () async {
-            if (parent.commentReply.length >= parent.replyNum) return;
-            final detail = await webViewRequest.getCommentDetail(widget.topicId, parent.commentId);
-            if (!mounted || !sheetContext.mounted) return;
-            // 保留已展示回复的对象，避免加载期间的点赞结果被旧响应覆盖。
-            final existing = {for (final reply in parent.commentReply) reply.commentId: reply};
-            setState(() {
-              parent.commentReply = detail.commentReply
-                  .map((reply) => existing[reply.commentId] ?? reply).toList();
-              parent.replyNum = detail.replyNum;
-            });
-            _replyChanges.value++;
-          },
-          parentBuilder: (context) => _replyBuilder(parent,
-            showReplies: false,
-            sourceContext: context,
-            onReply: () => _openCommentComposer(
-              sourceContext: sheetContext,
-              name: parent.userNickName, avatar: parent.userAvatar,
-              parentId: parent.commentId,
-            ),
-          ),
-          replyCount: () => parent.commentReply.length,
-          replyBuilder: (context, index) {
-            final reply = parent.commentReply[index];
-            return _secondaryReplyBuilder(reply, parent.commentId,
-              inSheet: true,
-              sourceContext: context,
-              onReply: () => _openCommentComposer(
-                sourceContext: sheetContext,
-                name: reply.userNickName, avatar: reply.userAvatar,
-                parentId: parent.commentId, subId: reply.commentId,
-              ),
-            );
-          },
-        ),
-      ),
-    );
+    if (_repliesSheetOpen || _pendingReplyLikes.isNotEmpty) return;
+    _repliesSheetOpen = true;
+    try {
+      await showCommentThreadSheet(
+        context: context, topicId: widget.topicId, commentId: parent.commentId,
+        initialComment: parent,
+        topicAuthorId: webViewRequest.webViewContent.userId,
+        draftFor: (parentId, subId) => _commentDrafts.putIfAbsent(
+          (parentId, subId), CommentEditingController.new),
+        onOpenTopic: (context, topicId) => RouteUtils.push(
+          context, WebViewPage(topicId: topicId)),
+        onChanged: (updated) {
+          if (!mounted) return;
+          final index = webViewRequest.replyList.indexWhere(
+            (item) => item.commentId == updated.commentId);
+          if (index >= 0) {
+            setState(() => webViewRequest.replyList[index] = updated);
+          }
+        },
+      );
+    } finally {
+      _repliesSheetOpen = false;
+    }
   }
 
   Future<void> _likeSecondaryReply(CommentReply reply) async {
     if (!mounted || _pendingReplyLikes.contains(reply.commentId)) return;
     setState(() => _pendingReplyLikes.add(reply.commentId));
-    _replyChanges.value++;
     try {
       // 点赞的是楼中楼评论自身，不能使用所属楼层的 replyId。
       final success = await webViewRequest.likeComment(widget.topicId, reply.commentId);
@@ -807,155 +721,20 @@ class _WebViewPageState extends State<WebViewPage> {
     } finally {
       if (mounted) {
         setState(() => _pendingReplyLikes.remove(reply.commentId));
-        _replyChanges.value++;
       }
     }
   }
 
-  Widget _secondaryReplyBuilder(CommentReply reply, int replyId, {
-    bool inSheet = false,
-    BuildContext? sourceContext,
-    VoidCallback? onReply,
-  }) {
-    final context = sourceContext ?? this.context;
-    return Container(
-      margin: EdgeInsets.only(left: inSheet ? 0 : 45),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: inSheet ? Colors.white : Colors.grey[200],
-        // borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            runSpacing: 3,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  // showToast(webViewRequest.webViewContent.userId.toString());
-                  RouteUtils.push(
-                    context,
-                    OtherUserPage(uid: reply.userId.toString()),
-                  );
-                },
-                child: Text(
-                  reply.userNickName,
-                  style: TextStyle(
-                    fontSize: UiSizeUtil.secondCommentUserNameFontSize,
-                    color: Color.fromRGBO(242, 108, 28, 1),
-                  ),
-                ),
-              ),
-              if (reply.isAuthor)
-                const Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: TopicAuthorBadge(),
-                ),
-              if (reply.replyTo != null)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text("回复",
-                      style: TextStyle(
-                        fontSize: UiSizeUtil.secondCommentUserNameFontSize,
-                      )),
-                ),
-              if (reply.replyTo != null)
-                GestureDetector(
-                  onTap: () {
-                    // showToast(webViewRequest.webViewContent.userId.toString());
-                    RouteUtils.push(
-                      context,
-                      OtherUserPage(uid: reply.replyToUid.toString()),
-                    );
-                  },
-                  child: Text(
-                    reply.replyTo!,
-                    style: TextStyle(
-                      fontSize: UiSizeUtil.secondCommentUserNameFontSize,
-                      color: Color.fromRGBO(242, 108, 28, 1),
-                    ),
-                  ),
-                ),
-              if (reply.replyToUid == webViewRequest.webViewContent.userId)
-                const Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: TopicAuthorBadge(),
-                ),
-              const Text(" ："),
-            ],
-          ),
-          SelectionArea(
-            child: HtmlWidget(
-              reply.content,
-              factoryBuilder: () => MyWidgetFactory(context),
-              onTapUrl: (url) => _openTopicLink(url, sourceContext: context),
-              customStylesBuilder: (element) {
-                return HtmlProcess.buildCustomStyles(element);
-              },
-              textStyle: TextStyle(
-                fontSize: UiSizeUtil.secondCommentFontSize,
-                color: Colors.black,
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  '${reply.createTime}  ${reply.ipLocation.trim()}',
-                  style: TextStyle(
-                    fontSize: UiSizeUtil.secondCommentTimeFontSize,
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _pendingReplyLikes.contains(reply.commentId)
-                    ? null
-                    : () => _likeSecondaryReply(reply),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        reply.isLike ? 'assets/liked.png' : 'assets/likes.png',
-                        width: UiSizeUtil.postCommentLikeIconSize,
-                        height: UiSizeUtil.postCommentLikeIconSize,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Text(
-                          reply.likeNum.toString(),
-                          style: TextStyle(
-                            fontSize: UiSizeUtil.postCommentLikeFontSize,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: onReply ?? () => _openCommentComposer(
-                  name: reply.userNickName, avatar: reply.userAvatar,
-                  parentId: replyId, subId: reply.commentId,
-                ),
-                child: Image.asset(
-                  "assets/comments.png",
-                  width: UiSizeUtil.postCommentLikeIconSize,
-                  height: UiSizeUtil.postCommentLikeIconSize,
-                ),
-              ),
-            ],
-          )
-        ],
+  Widget _secondaryReplyBuilder(CommentReply reply, int replyId) {
+    return CommentReplyCard(
+      reply: reply,
+      topicAuthorId: webViewRequest.webViewContent.userId,
+      onTapUrl: (url) => _openTopicLink(url),
+      onLike: _pendingReplyLikes.contains(reply.commentId)
+          ? null : () => _likeSecondaryReply(reply),
+      onReply: () => _openCommentComposer(
+        name: reply.userNickName, avatar: reply.userAvatar,
+        parentId: replyId, subId: reply.commentId,
       ),
     );
   }

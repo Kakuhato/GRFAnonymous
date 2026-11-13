@@ -1,4 +1,5 @@
 import 'game_data_page.dart';
+import 'widgets/endless_rank_icon.dart';
 import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -289,8 +290,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.military_tech,
-                            size: 14, color: Color(0xFF8B8070)),
+                        EndlessRankIcon(rank: myPageRequest.userData.endlessRank),
                         Text(
                           '${myPageRequest.userData.endlessFloor < 0 ? 0 : myPageRequest.userData.endlessFloor}层',
                           style: const TextStyle(fontSize: 12),
@@ -494,7 +494,10 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                         child: Row(
                           children: [
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.mainStage, '主线进度'),
+                                myPageRequest.gameData.baseInfo.activeDays < 0
+                                    ? '—'
+                                    : '${myPageRequest.gameData.baseInfo.activeDays}',
+                                '活跃天数'),
                             const SizedBox(width: 16),
                             _buildInfoText(
                                 myPageRequest.gameData.baseInfo.heroCount.toString(), '人形收集'),

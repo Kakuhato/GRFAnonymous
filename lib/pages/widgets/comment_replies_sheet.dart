@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../ui/uiSizeUtil.dart';
 
-/// 帖子内的回复面板，由父页面提供数据和评论交互。
+/// 通用回复面板，由调用方提供数据和评论交互。
 class CommentRepliesSheet extends StatefulWidget {
   const CommentRepliesSheet({
     super.key,
@@ -58,7 +58,11 @@ class _CommentRepliesSheetState extends State<CommentRepliesSheet> {
               ))),
               IconButton(
                 tooltip: '关闭',
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  if (ModalRoute.of(context)?.isCurrent == true) {
+                    Navigator.of(context).pop();
+                  }
+                },
                 icon: const Icon(Icons.close),
               ),
             ]),

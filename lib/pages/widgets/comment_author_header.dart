@@ -4,6 +4,7 @@ import 'package:grfanonymous/models/replyList.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'topic_author_badge.dart';
 import 'topic_identity_badge.dart';
+import 'endless_rank_icon.dart';
 
 const _orange = Color(0xFFFF701F);
 
@@ -127,7 +128,10 @@ class CommentAuthorBadges extends StatelessWidget {
               color: const Color(0xFFE9EBED),
               child: Text.rich(
                 TextSpan(children: [
-                  const WidgetSpan(child: Icon(Icons.military_tech, size: 14, color: Color(0xFF8B8070))),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: EndlessRankIcon(rank: author.endlessRank),
+                  ),
                   TextSpan(text: '${author.endlessFloor < 0 ? 0 : author.endlessFloor}层'),
                 ]),
                 style: const TextStyle(fontSize: 12, color: Colors.black87),

@@ -163,19 +163,6 @@ class GameData {
     );
   }
 
-  // factory GameData.fromJson(Map<String, dynamic> json) {
-  //   return GameData(
-  //     baseInfo: BaseInfo.fromJson(json['base_info']),
-  //     heroList:
-  //         (json['hero_list'] as List).map((i) => HeroList.fromJson(i)).toList(),
-  //     stageInfo: StageInfo.fromJson(json['stage_info']),
-  //     themeInfo: (json['theme_info'] as List)
-  //         .map((i) => ThemeInfo.fromJson(i))
-  //         .toList(),
-  //     userInfo: UserInfo.fromJson(json['user_info']),
-  //   );
-  // }
-
   Map<String, dynamic> toJson() {
     return {
       'base_info': baseInfo.toJson(),
@@ -189,6 +176,7 @@ class GameData {
 
 class BaseInfo {
   int achievementCount;
+  String achievementReward;
   int activeDays;
   int heroCount;
   String mainStage;
@@ -197,6 +185,7 @@ class BaseInfo {
 
   BaseInfo({
     required this.achievementCount,
+    this.achievementReward = '—',
     required this.activeDays,
     required this.heroCount,
     required this.mainStage,
@@ -208,6 +197,8 @@ class BaseInfo {
   factory BaseInfo.fromJson(Map<String, dynamic> json) {
     return BaseInfo(
       achievementCount: json['achievement_count'] ?? -1,
+      // 展示字段兼容数值和字符串，缺失时不伪造为 0。
+      achievementReward: json['achievement_reward']?.toString() ?? '—',
       activeDays: json['active_days'] ?? -1,
       heroCount: json['hero_count'] ?? -1,
       mainStage: json['main_stage'] ?? "-",
@@ -219,6 +210,7 @@ class BaseInfo {
   Map<String, dynamic> toJson() {
     return {
       'achievement_count': achievementCount,
+      'achievement_reward': achievementReward,
       'active_days': activeDays,
       'hero_count': heroCount,
       'main_stage': mainStage,
@@ -305,16 +297,19 @@ class GameStageEntry {
   }
 }
 
+/// 所有战绩共用一份响应；保留原始字段，按需转换为页面展示条目。
 class StageInfo {
-  KuobianStage kuobianStage;
-  TowerStage towerStage;
-  WeekCommon weekCommon;
-  List<WeekSpecial> weekSpecial;
-  Map<String, dynamic>? _rawStages;
+  final Map<String, dynamic> _rawStages;
+
+  StageInfo._(this._rawStages);
+
+  factory StageInfo.fromJson(Map<String, dynamic> json) {
+    return StageInfo._(Map<String, dynamic>.from(json));
+  }
 
   List<GameStageEntry> get entries {
     final result = <GameStageEntry>[];
-    for (final entry in (_rawStages ?? <String, dynamic>{}).entries) {
+    for (final entry in _rawStages.entries) {
       final values = entry.value is List ? entry.value as List : [entry.value];
       for (final value in values) {
         if (value is Map<String, dynamic> && value.isNotEmpty) {
@@ -325,197 +320,7 @@ class StageInfo {
     return result;
   }
 
-  StageInfo({
-    required this.kuobianStage,
-    required this.towerStage,
-    required this.weekCommon,
-    required this.weekSpecial,
-    Map<String, dynamic>? rawStages,
-  }) : _rawStages = rawStages;
-
-  //下划线命名json，可能传入{}，传入weekSpecial的可能为null,json['week_special'] as List可能为null
-  factory StageInfo.fromJson(Map<String, dynamic> json) {
-    return StageInfo(
-      rawStages: Map<String, dynamic>.from(json),
-      kuobianStage: KuobianStage.fromJson(json['kuobian_stage'] ?? {}),
-      towerStage: TowerStage.fromJson(json['tower_stage'] ?? {}),
-      weekCommon: WeekCommon.fromJson(json['week_common'] ?? {}),
-      weekSpecial: (json['week_special'] as List?)
-              ?.map((i) => WeekSpecial.fromJson(i))
-              .toList() ??
-          [],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      ...?_rawStages,
-      'kuobian_stage': kuobianStage.toJson(),
-      'tower_stage': towerStage.toJson(),
-      'week_common': weekCommon.toJson(),
-      'week_special': weekSpecial.map((i) => i.toJson()).toList(),
-    };
-  }
-}
-
-class KuobianStage {
-  int caseId;
-  String name;
-  String showPic;
-  String stageCode;
-  String stageName;
-  int stayStage;
-
-  KuobianStage({
-    required this.caseId,
-    required this.name,
-    required this.showPic,
-    required this.stageCode,
-    required this.stageName,
-    required this.stayStage,
-  });
-
-  //下划线命名json，可能传入{}，传入{}返回null
-  factory KuobianStage.fromJson(Map<String, dynamic> json) {
-    return KuobianStage(
-      caseId: json['case_id'] ?? 0,
-      name: json['name'] ?? "",
-      showPic: json['show_pic'] ?? "",
-      stageCode: json['stage_code'] ?? "",
-      stageName: json['stage_name'] ?? "",
-      stayStage: json['stay_stage'] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'case_id': caseId,
-      'name': name,
-      'show_pic': showPic,
-      'stage_code': stageCode,
-      'stage_name': stageName,
-      'stay_stage': stayStage,
-    };
-  }
-}
-
-class TowerStage {
-  int caseId;
-  int completePercent;
-  String name;
-  String showPic;
-  String stageCode;
-  String stageName;
-  int stayStage;
-
-  TowerStage({
-    required this.caseId,
-    required this.completePercent,
-    required this.name,
-    required this.showPic,
-    required this.stageCode,
-    required this.stageName,
-    required this.stayStage,
-  });
-
-  //下划线命名json，可能传入{}
-  factory TowerStage.fromJson(Map<String, dynamic> json) {
-    return TowerStage(
-      caseId: json['case_id'] ?? 0,
-      completePercent: json['complete_percent'] ?? 0,
-      name: json['name'] ?? "",
-      showPic: json['show_pic'] ?? "",
-      stageCode: json['stage_code'] ?? "",
-      stageName: json['stage_name'] ?? "",
-      stayStage: json['stay_stage'] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'case_id': caseId,
-      'complete_percent': completePercent,
-      'name': name,
-      'show_pic': showPic,
-      'stage_code': stageCode,
-      'stage_name': stageName,
-      'stay_stage': stayStage,
-    };
-  }
-}
-
-class WeekCommon {
-  int maxScore;
-  String name;
-  String showPic;
-  int stageRank;
-
-  WeekCommon({
-    required this.maxScore,
-    required this.name,
-    required this.showPic,
-    required this.stageRank,
-  });
-
-  //下划线命名json，可能传入{
-  factory WeekCommon.fromJson(Map<String, dynamic> json) {
-    return WeekCommon(
-      maxScore: json['max_score'] ?? 0,
-      name: json['name'] ?? "",
-      showPic: json['show_pic'] ?? "",
-      stageRank: json['stage_rank'] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'max_score': maxScore,
-      'name': name,
-      'show_pic': showPic,
-      'stage_rank': stageRank,
-    };
-  }
-}
-
-class WeekSpecial {
-  int caseId;
-  String name;
-  String showPic;
-  String stageCode;
-  String stageName;
-  int stayStage;
-
-  WeekSpecial({
-    required this.caseId,
-    required this.name,
-    required this.showPic,
-    required this.stageCode,
-    required this.stageName,
-    required this.stayStage,
-  });
-
-  //下划线命名json，可能传入{
-  factory WeekSpecial.fromJson(Map<String, dynamic> json) {
-    return WeekSpecial(
-      caseId: json['case_id'] ?? 0,
-      name: json['name'] ?? "",
-      showPic: json['show_pic'] ?? "",
-      stageCode: json['stage_code'] ?? "",
-      stageName: json['stage_name'] ?? "",
-      stayStage: json['stay_stage'] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'case_id': caseId,
-      'name': name,
-      'show_pic': showPic,
-      'stage_code': stageCode,
-      'stage_name': stageName,
-      'stay_stage': stayStage,
-    };
-  }
+  Map<String, dynamic> toJson() => Map<String, dynamic>.from(_rawStages);
 }
 
 class ThemeInfo {
@@ -637,32 +442,7 @@ GameData defaultGameData = GameData(
     weaponCount: 0,
   ),
   heroList: [],
-  stageInfo: StageInfo(
-    kuobianStage: KuobianStage(
-      caseId: 0,
-      name: "",
-      showPic: "",
-      stageCode: "",
-      stageName: "",
-      stayStage: 0,
-    ),
-    towerStage: TowerStage(
-      caseId: 0,
-      completePercent: 0,
-      name: "",
-      showPic: "",
-      stageCode: "",
-      stageName: "",
-      stayStage: 0,
-    ),
-    weekCommon: WeekCommon(
-      maxScore: 0,
-      name: "",
-      showPic: "",
-      stageRank: 0,
-    ),
-    weekSpecial: [],
-  ),
+  stageInfo: StageInfo.fromJson({}),
   themeInfo: [],
   userInfo: UserInfo(
     avatar: "",

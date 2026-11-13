@@ -454,7 +454,10 @@ class _OtherUserPageState extends State<OtherUserPage>
                         child: Row(
                           children: [
                             _buildInfoText(
-                                myPageRequest.gameData.baseInfo.mainStage, '主线进度'),
+                                myPageRequest.gameData.baseInfo.activeDays < 0
+                                    ? '—'
+                                    : '${myPageRequest.gameData.baseInfo.activeDays}',
+                                '活跃天数'),
                             const SizedBox(width: 16),
                             _buildInfoText(
                                 myPageRequest.gameData.baseInfo.heroCount.toString(), '人形收集'),

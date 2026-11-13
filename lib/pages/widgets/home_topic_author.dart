@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/ui/uiSizeUtil.dart';
 import 'topic_identity_badge.dart';
+import 'endless_rank_icon.dart';
 
 /// 帖子作者资料，仅展示接口返回的信息，不依赖页面或请求对象。
 class HomeTopicAuthor extends StatelessWidget {
@@ -114,8 +115,7 @@ class HomeTopicAuthor extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.military_tech,
-                            size: 14, color: Color(0xFF8B8070)),
+                        EndlessRankIcon(rank: topic.endlessRank),
                         Text(
                           '${topic.endlessFloor < 0 ? 0 : topic.endlessFloor}层',
                           style: const TextStyle(fontSize: 12),
