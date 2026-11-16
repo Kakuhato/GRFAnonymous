@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'api_interceptor.dart';
 
 import 'package:grfanonymous/pageRequest/cookieInterceptor.dart';
 import 'package:grfanonymous/pageRequest/printLogInterceptor.dart';
@@ -84,6 +84,8 @@ class DioInstance {
       responseType: responseType ?? ResponseType.json,
       contentType: contentType,
     );
+    _dio.interceptors.clear();
+    _dio.interceptors.add(ApiInterceptor());
     // cookie拦截器
     _dio.interceptors.add(CookieInterceptor.cookieManager!);
     //一般拦截器

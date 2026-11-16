@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'package:flutter/material.dart';
 import '../models/userData.dart';
 import '../pageRequest/myPageRequest.dart';
@@ -15,7 +17,7 @@ class _GameHeroListPageState extends State<GameHeroListPage> {
   final _request = MyPageRequest();
   List<HeroList>? _heroes;
   bool _loading = false;
-  String? _error;
+  RequestFailure? _error;
 
   @override
   void initState() {
@@ -33,9 +35,9 @@ class _GameHeroListPageState extends State<GameHeroListPage> {
       final heroes = await _request.fetchGameHeroes();
       if (!mounted) return;
       setState(() => _heroes = heroes);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      setState(() => _error = '人形列表加载失败，请重试');
+      setState(() => _error = RequestFailure.from(error));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -60,7 +62,9 @@ class _GameHeroListPageState extends State<GameHeroListPage> {
       ),
       body: _loading && _heroes == null
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          : _heroes == null && _error != null
+              ? RequestErrorView(error: _error!, onRetry: _load)
+              : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -69,7 +73,7 @@ class _GameHeroListPageState extends State<GameHeroListPage> {
                   if (_error != null)
                     Column(
                       children: [
-                        Text(_error!, style: const TextStyle(color: Colors.red)),
+                        Text(_error!.message, style: const TextStyle(color: Colors.red)),
                         TextButton(
                           onPressed: _loading ? null : _load,
                           child: const Text('重新加载'),

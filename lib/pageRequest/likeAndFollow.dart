@@ -1,3 +1,4 @@
+import 'request_failure.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 import 'package:oktoast/oktoast.dart';
@@ -6,7 +7,7 @@ class LikeAndFollow {
   bool isSignIn = false;
   int _signInRevision = 0;
 
-  Future<bool> like(String id) async {
+  Future<bool> like(String id) => runRequestAction('like:$id', () async {
     Response response = await DioInstance.instance().get(
       path: "/community/topic/like/$id",
       param: {"id": id},
@@ -17,7 +18,7 @@ class LikeAndFollow {
     } else {
       return false;
     }
-  }
+  });
 
   Future<void> getSignInStatus() async {
     final revision = _signInRevision;
@@ -70,7 +71,7 @@ class LikeAndFollow {
     return false;
   }
 
-  Future<bool> follow(int userID) async {
+  Future<bool> follow(int userID) => runRequestAction('follow:$userID', () async {
     Response response = await DioInstance.instance()
         .get(path: "/community/member/follow/$userID");
     if (response.data["Code"] == 0) {
@@ -80,9 +81,9 @@ class LikeAndFollow {
       showToast("操作失败");
       return false;
     }
-  }
+  });
 
-  Future<bool> share(String id) async {
+  Future<bool> share(String id) => runRequestAction('share:$id', () async {
     Response response = await DioInstance.instance().get(
       path: "/community/topic/share/$id",
       param: {"id": id},
@@ -93,5 +94,5 @@ class LikeAndFollow {
       showToast(response.data["Message"]);
       return false;
     }
-  }
+  });
 }

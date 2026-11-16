@@ -1,12 +1,11 @@
+import '../pageRequest/request_failure.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:grfanonymous/pageRequest/loginRequest.dart';
 import 'package:grfanonymous/pages/tabPage.dart';
 import 'package:grfanonymous/utils/routeUtil.dart';
 import 'package:flutter/material.dart';
-import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
 
-import '../utils/hivUtil.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,6 +19,23 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isPasswordLogin = true;
   String input = '';
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _loginAction(Future<bool> Function() action, {bool navigate = true}) async {
+    if (_busy) return;
+    setState(() { _busy = true; _error = null; });
+    try {
+      final success = await action();
+      if (mounted && success && navigate) RouteUtils.pushAndRemove(context, TabPage());
+    } catch (error) {
+      final failure = RequestFailure.from(error);
+      if (mounted && !failure.isSilent) setState(() => _error = failure.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +51,8 @@ class _LoginPageState extends State<LoginPage> {
               fit: BoxFit.cover,
             ),
           ),
-          child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20)
+          child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20)
                   .add(const EdgeInsets.only(top: 100)),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -50,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
                       : _buildVerificationCodeLoginForm(),
                   SizedBox(height: 20),
                   TextButton(
-                    onPressed: () {
+                    onPressed: _busy ? null : () {
                       setState(() {
                         _isPasswordLogin = !_isPasswordLogin;
                       });
@@ -58,7 +74,11 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(_isPasswordLogin ? '验证码登录' : '账号密码登录',
                         style: const TextStyle(color: Colors.grey)),
                   ),
-                  const Spacer(),
+                  if (_busy) const LinearProgressIndicator(),
+                  if (_error != null) Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(_error!, style: const TextStyle(color: Colors.orange)),
+                  ),
                 ],
               )),
         ),
@@ -84,13 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                 backgroundColor: WidgetStateProperty.all(
                     const Color.fromRGBO(241, 108, 28, 1)),
               ),
-              onPressed: () {
-                loginRequest.passWordLogin().then((value) {
-                  if (value) {
-                    RouteUtils.pushAndRemove(context, TabPage());
-                  }
-                });
-              },
+              onPressed: _busy ? null : () => _loginAction(loginRequest.passWordLogin),
               child: const Center(
                 child: Text(
                   '登录',
@@ -128,9 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                 backgroundColor: WidgetStateProperty.all(
                     const Color.fromRGBO(48, 122, 152, 1)),
               ),
-              onPressed: () {
-                loginRequest.getMsg();
-              },
+              onPressed: _busy ? null : () => _loginAction(loginRequest.getMsg, navigate: false),
               child: const Center(
                 child: Text(
                   '获取验证码',
@@ -146,13 +158,7 @@ class _LoginPageState extends State<LoginPage> {
               backgroundColor: WidgetStateProperty.all(
                   const Color.fromRGBO(241, 108, 28, 1)),
             ),
-            onPressed: () {
-              loginRequest.msgCodeLogin().then((value) {
-                if (value) {
-                  RouteUtils.pushAndRemove(context, TabPage());
-                }
-              });
-            },
+            onPressed: _busy ? null : () => _loginAction(loginRequest.msgCodeLogin),
             child: const Center(
               child: Text(
                 '登录',

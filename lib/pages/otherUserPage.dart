@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import '../utils/image_decode_size.dart';
 import 'package:grfanonymous/ui/image_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -33,13 +35,16 @@ class _OtherUserPageState extends State<OtherUserPage>
   MyPageRequest myPageRequest = MyPageRequest();
   LikeAndFollow likeAndFollow = LikeAndFollow();
   bool _isLoading = true;
+  bool _refreshing = false;
+  bool _paging = false;
+  bool _hasLoaded = false;
+  Object? _error;
 
   @override
   void initState() {
+    super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _refresh();
-    // _tabController = TabController(length: 3, vsync: this);
-    super.initState();
   }
 
   @override
@@ -49,61 +54,97 @@ class _OtherUserPageState extends State<OtherUserPage>
   }
 
   Future<void> _refresh() async {
-    await myPageRequest.getOtherUserData(widget.uid);
-    await myPageRequest.getOtherGameData(widget.uid);
-    await myPageRequest.getOwnTopic(
-      onLoad: false,
-      sort_type: SortType.reply,
-      category_id: CategoryId.none,
-      query_type: QueryType.identity,
-      user_id: int.parse(widget.uid),
-    );
-    await myPageRequest.getReply(
-      onFresh: true,
-      sortType: SortType.reply,
-      categoryId: CategoryId.none,
-      queryType: QueryType.favor,
-      userId: int.parse(widget.uid),
-    );
-    if (myPageRequest.userData.favors != 0) {
-      await myPageRequest.getFavorTopic(
+    if (_refreshing || _paging) return;
+    _refreshing = true;
+    setState(() { _error = null; _isLoading = !_hasLoaded; });
+    try {
+      await myPageRequest.getOtherUserData(widget.uid);
+      await myPageRequest.getOtherGameData(widget.uid);
+      await myPageRequest.getOwnTopic(
+        onLoad: false,
+        sort_type: SortType.reply,
+        category_id: CategoryId.none,
+        query_type: QueryType.identity,
+        user_id: int.parse(widget.uid),
+      );
+      await myPageRequest.getReply(
         onFresh: true,
         sortType: SortType.reply,
         categoryId: CategoryId.none,
         queryType: QueryType.favor,
         userId: int.parse(widget.uid),
       );
+      if (myPageRequest.userData.favors != 0) {
+        await myPageRequest.getFavorTopic(
+          onFresh: true,
+          sortType: SortType.reply,
+          categoryId: CategoryId.none,
+          queryType: QueryType.favor,
+          userId: int.parse(widget.uid),
+        );
+      }
+      _hasLoaded = true;
+    } catch (error) {
+      _error = error;
+      if (_hasLoaded && mounted) RequestFailure.notify(error);
+    } finally {
+      _refreshing = false;
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   Future<IndicatorResult> loadOwnTopicData() async {
-    await myPageRequest.getOwnTopic(
-      onLoad: true,
-      user_id: int.parse(widget.uid),
-    );
-    setState(() {});
-    return IndicatorResult.success;
+    if (_refreshing || _paging) return IndicatorResult.fail;
+    _paging = true;
+    try {
+      await myPageRequest.getOwnTopic(
+        onLoad: true,
+        user_id: int.parse(widget.uid),
+      );
+      if (mounted) setState(() {});
+      return IndicatorResult.success;
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
+      return IndicatorResult.fail;
+    } finally {
+      _paging = false;
+    }
   }
 
   Future<IndicatorResult> loadFavorTopicData() async {
-    await myPageRequest.getFavorTopic(
-      onFresh: false,
-      userId: int.parse(widget.uid),
-    );
-    setState(() {});
-    return IndicatorResult.success;
+    if (_refreshing || _paging) return IndicatorResult.fail;
+    _paging = true;
+    try {
+      await myPageRequest.getFavorTopic(
+        onFresh: false,
+        userId: int.parse(widget.uid),
+      );
+      if (mounted) setState(() {});
+      return IndicatorResult.success;
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
+      return IndicatorResult.fail;
+    } finally {
+      _paging = false;
+    }
   }
 
   Future<IndicatorResult> loadReplyData() async {
-    await myPageRequest.getReply(
-      onFresh: false,
-      userId: int.parse(widget.uid),
-    );
-    setState(() {});
-    return IndicatorResult.success;
+    if (_refreshing || _paging) return IndicatorResult.fail;
+    _paging = true;
+    try {
+      await myPageRequest.getReply(
+        onFresh: false,
+        userId: int.parse(widget.uid),
+      );
+      if (mounted) setState(() {});
+      return IndicatorResult.success;
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
+      return IndicatorResult.fail;
+    } finally {
+      _paging = false;
+    }
   }
 
   @override
@@ -125,7 +166,9 @@ class _OtherUserPageState extends State<OtherUserPage>
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : NestedScrollView(
+          : !_hasLoaded && _error != null
+              ? RequestErrorView(error: _error!, onRetry: _refresh)
+              : NestedScrollView(
               headerSliverBuilder:
                   (BuildContext context, bool innerBoxIsScrolled) => [
                 SliverToBoxAdapter(
@@ -234,7 +277,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                 onTap: () async {
                   bool result =
                       await likeAndFollow.follow(myPageRequest.userData.uid);
-                  if (result) {
+                  if (result && mounted) {
                     setState(() {
                       myPageRequest.userData.isFollow =
                           !myPageRequest.userData.isFollow;
@@ -510,10 +553,7 @@ class _OtherUserPageState extends State<OtherUserPage>
     return EasyRefresh(
       header: const MaterialHeader(),
       onLoad: myPageRequest.ownTopicListParam.nextPage
-          ? () async {
-              await loadOwnTopicData();
-              setState(() {});
-            }
+          ? loadOwnTopicData
           : null,
       child: SingleChildScrollView(
         child: Column(
@@ -716,7 +756,7 @@ class _OtherUserPageState extends State<OtherUserPage>
                   onTap: () async {
                     bool result =
                         await likeAndFollow.like(topic.topicId.toString());
-                    if (result) {
+                    if (result && mounted) {
                       setState(() {
                         topic.isLike = !topic.isLike;
                         if (topic.isLike) {
@@ -759,10 +799,7 @@ class _OtherUserPageState extends State<OtherUserPage>
     return EasyRefresh(
       header: const MaterialHeader(),
       onLoad: myPageRequest.replyListParam.nextPage
-          ? () async {
-              await loadReplyData();
-              setState(() {});
-            }
+          ? loadReplyData
           : null,
       child: SingleChildScrollView(
         child: Column(
@@ -861,10 +898,7 @@ class _OtherUserPageState extends State<OtherUserPage>
       header: const MaterialHeader(),
       onLoad: myPageRequest.favorTopicListParam.total !=
               myPageRequest.favorTopicList.length
-          ? () async {
-              await loadFavorTopicData();
-              setState(() {});
-            }
+          ? loadFavorTopicData
           : null,
       child: SingleChildScrollView(
         child: Column(

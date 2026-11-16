@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:oktoast/oktoast.dart';
@@ -35,7 +37,9 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
   bool _hasMore = true;
   bool _detailLoading = false;
   String? _detailError;
-  String? _listError;
+  RequestFailure? _listError;
+  bool _listLoaded = false;
+  bool _retryReset = false;
 
   @override
   void initState() {
@@ -73,8 +77,8 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
     try {
       final detail = await _request.detail(widget.themeId);
       if (mounted) setState(() => _detail = detail);
-    } catch (_) {
-      if (mounted) setState(() => _detailError = '话题简介加载失败，请重试');
+    } catch (error) {
+      if (mounted) setState(() => _detailError = RequestFailure.from(error).message);
     } finally {
       if (mounted) setState(() => _detailLoading = false);
     }
@@ -91,22 +95,24 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
     setState(() {
       _loading = true;
       _listError = null;
-      if (reset) { _topics = []; _cursor = {}; _page = 0; _hasMore = true; }
+      _retryReset = reset;
     });
     try {
       final result = await _request.topics(widget.themeId,
           sort: _sort, page: page, cursor: reset ? const {} : _cursor);
       if (!mounted || revision != _revision) return;
       setState(() {
+        if (reset) _topics = [];
+        _listLoaded = true;
         final ids = _topics.map((topic) => topic.topicId).toSet();
         _topics.addAll(result.topics.where((topic) => ids.add(topic.topicId)));
         _cursor = result.cursor;
         _page = page;
         _hasMore = result.hasMore;
       });
-    } catch (_) {
+    } catch (error) {
       if (mounted && revision == _revision) {
-        setState(() => _listError = '帖子加载失败，请重试');
+        setState(() => _listError = RequestFailure.from(error));
       }
     } finally {
       if (mounted && revision == _revision) setState(() => _loading = false);
@@ -115,7 +121,7 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
 
   void _changeSort(int sort) {
     if (_sort == sort) return;
-    setState(() => _sort = sort);
+    setState(() { _sort = sort; _topics = []; _listLoaded = false; _hasMore = true; });
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _loadTopics(reset: true);
   }
@@ -125,7 +131,7 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
     try {
       final success = await _actions.like('${topic.topicId}');
       if (!mounted) return;
-      if (!success) { showToast('操作失败，请重试'); return; }
+      if (!success) return;
       setState(() {
         topic.isLike = !topic.isLike;
         if (topic.isLike) { topic.likeNum++; }
@@ -141,7 +147,7 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
     try {
       final success = await _actions.follow(topic.userId);
       if (!mounted) return;
-      if (!success) { showToast('操作失败，请重试'); return; }
+      if (!success) return;
       final followed = !topic.isFollow;
       setState(() {
         for (final item in _topics) {
@@ -200,7 +206,9 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
         iconTheme: IconThemeData(size: UiSizeUtil.topIconSize, color: Colors.white),
         title: Text('话题详情', style: TextStyle(fontSize: UiSizeUtil.headerFontSize)),
       ),
-      body: SafeArea(top: false, child: Stack(
+      body: !_listLoaded && _listError != null && !_loading
+          ? RequestErrorView(error: _listError!, onRetry: _refresh)
+          : SafeArea(top: false, child: Stack(
         children: [
           RefreshIndicator(
             onRefresh: _refresh,
@@ -237,7 +245,7 @@ class _ThemeDetailPageState extends State<ThemeDetailPage> {
                 return Padding(padding: const EdgeInsets.all(16), child: Center(
                   child: _loading ? const CircularProgressIndicator()
                     : _listError != null
-                      ? TextButton(onPressed: () => _loadTopics(), child: Text(_listError!))
+                      ? TextButton(onPressed: () => _loadTopics(reset: _retryReset), child: Text(_listError!.message))
                       : _hasMore
                         ? TextButton(onPressed: () => _loadTopics(), child: const Text('加载更多'))
                         : Text(_topics.isEmpty ? '暂无相关帖子' : '没有更多帖子了', style: const TextStyle(color: Colors.grey)),

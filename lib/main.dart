@@ -1,48 +1,73 @@
+import 'package:flutter/rendering.dart';
+
+import 'utils/auth_session.dart';
+import 'pages/startup_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:grfanonymous/utils/app_image_cache.dart';
 import 'package:grfanonymous/pageRequest/emoji_request.dart';
 import 'package:grfanonymous/pageRequest/cookieInterceptor.dart';
-import 'package:grfanonymous/pageRequest/loginRequest.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
-import 'package:grfanonymous/pages/homePage.dart';
 import 'package:grfanonymous/pages/loginPage.dart';
-import 'package:grfanonymous/pages/tabPage.dart';
 import 'package:grfanonymous/utils/hivUtil.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:oktoast/oktoast.dart';
 
 Future<void> main() async {
-  // debugRepaintRainbowEnabled = true;
+  debugPaintSizeEnabled = false;
   WidgetsFlutterBinding.ensureInitialized();
   CachedNetworkImageProvider.defaultCacheManager = AppImageCache.instance;
   await EmojiRequest.initialize();
   // await Hive.init(path)
   await HiveUtil.instance().init();
   await CookieInterceptor.init();
-  DioInstance.instance().initDio(
+  await DioInstance.instance().initDio(
     baseUrl: "https://gf2-bbs-api.sunborngame.com/",
   );
   imageCache.maximumSizeBytes = 128 * 1024 * 1024;
-  var page;
-  if (await LoginRequest.isLogin()) {
-    page = TabPage();
-  } else {
-    page = const LoginPage();
-  }
-  runApp(MyApp(page: page));
+  runApp(const MyApp(page: StartupPage()));
 }
 
-class MyApp extends StatelessWidget {
+final appNavigatorKey = GlobalKey<NavigatorState>();
+
+class MyApp extends StatefulWidget {
   const MyApp({super.key, required this.page});
 
   final Widget page;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    AuthSession.instance.onExpired = _openLogin;
+  }
+
+  void _openLogin() {
+    // 下一帧导航，避开页面正在构建以及底部弹层正在布局的时机。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !AuthSession.instance.expired) return;
+      appNavigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false);
+      showToast('登录已过期，请重新登录');
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  @override
+  void dispose() {
+    AuthSession.instance.onExpired = null;
+    super.dispose();
+  }
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return OKToast(
       child: MaterialApp(
+        navigatorKey: appNavigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'GRFAnonymous',
         theme: ThemeData(
@@ -51,7 +76,7 @@ class MyApp extends StatelessWidget {
         ),
         // onGenerateRoute: Routes.generateRoute,
         // initialRoute: RoutePath.tab,
-        home: page,
+        home: widget.page,
       ),
     );
   }

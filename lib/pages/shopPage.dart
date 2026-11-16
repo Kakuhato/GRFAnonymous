@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:oktoast/oktoast.dart';
@@ -16,6 +18,9 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
+  bool _loading = false;
+  bool _loaded = false;
+  Object? _error;
   ShopPageRequest shopPageRequest = ShopPageRequest();
   MyPageRequest myPageRequest = MyPageRequest();
 
@@ -26,9 +31,18 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   Future<void> _refresh() async {
-    await myPageRequest.getUserData();
-    await shopPageRequest.getShopItemList();
-    setState(() {});
+    if (_loading) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      await myPageRequest.getUserData();
+      await shopPageRequest.getShopItemList();
+      _loaded = true;
+    } catch (error) {
+      _error = error;
+      if (_loaded && mounted) RequestFailure.notify(error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -57,7 +71,9 @@ class _ShopPageState extends State<ShopPage> {
           ),
         ),
       ),
-      body: Column(
+      body: !_loaded && _error != null ? RequestErrorView(error: _error!, onRetry: _refresh)
+          : !_loaded && _loading ? const Center(child: CircularProgressIndicator())
+          : Column(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
@@ -255,9 +271,13 @@ class _ShopPageState extends State<ShopPage> {
                 const SizedBox(width: 20), // 添加一点水平间距
                 TextButton(
                   onPressed: () async {
-                    await shopPageRequest.exchangeItem(shopItem.exchangeId);
+                    final success = await runRequestAction('exchange', () async {
+                      await shopPageRequest.exchangeItem(shopItem.exchangeId);
+                      return true;
+                    });
+                    if (!mounted || !context.mounted || !success) return;
+                    Navigator.of(context).pop();
                     _refresh();
-                    Navigator.of(context).pop(); // 关闭对话框
                   },
                   child: const Text("确认"),
                 ),

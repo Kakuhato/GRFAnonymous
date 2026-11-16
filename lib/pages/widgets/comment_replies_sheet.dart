@@ -1,3 +1,4 @@
+import '../../pageRequest/request_failure.dart';
 import 'package:flutter/material.dart';
 
 import '../../ui/uiSizeUtil.dart';
@@ -25,7 +26,7 @@ class CommentRepliesSheet extends StatefulWidget {
 
 class _CommentRepliesSheetState extends State<CommentRepliesSheet> {
   bool _loading = true;
-  bool _failed = false;
+  RequestFailure? _failure;
 
   @override
   void initState() {
@@ -34,11 +35,11 @@ class _CommentRepliesSheetState extends State<CommentRepliesSheet> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _failed = false; });
+    setState(() { _loading = true; _failure = null; });
     try {
       await widget.loadReplies();
-    } catch (_) {
-      if (mounted) setState(() => _failed = true);
+    } catch (error) {
+      if (mounted) setState(() => _failure = RequestFailure.from(error));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -95,9 +96,9 @@ class _CommentRepliesSheetState extends State<CommentRepliesSheet> {
                       padding: EdgeInsets.all(16), child: CircularProgressIndicator(),
                     ));
                   }
-                  if (_failed) {
+                  if (_failure != null) {
                     return Center(child: TextButton(
-                      onPressed: _load, child: const Text('回复加载失败，点击重试'),
+                      onPressed: _load, child: Text('${_failure!.message}，点击重试'),
                     ));
                   }
                   return const SizedBox.shrink();

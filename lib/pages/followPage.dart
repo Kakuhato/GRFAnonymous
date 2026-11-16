@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'widgets/home_topic_card.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +20,9 @@ class FollowPage extends StatefulWidget {
 }
 
 class _FollowPageState extends State<FollowPage> {
+  bool _busy = false;
+  bool _hasLoaded = false;
+  Object? _error;
   FollowPageRequest followPageRequest = FollowPageRequest();
   LikeAndFollow likeAndFollow = LikeAndFollow();
   EasyRefreshController easyRefreshController = EasyRefreshController();
@@ -29,16 +34,31 @@ class _FollowPageState extends State<FollowPage> {
     super.initState();
   }
 
-  Future<IndicatorResult> refreshData() async {
-    await followPageRequest.getTopic(onLoad: false);
-    setState(() {});
-    return IndicatorResult.success;
+  Future<IndicatorResult> refreshData() => _load(false);
+  Future<IndicatorResult> loadData() => _load(true);
+
+  Future<IndicatorResult> _load(bool append) async {
+    if (_busy) return IndicatorResult.fail;
+    if (append && !followPageRequest.nextPage) return IndicatorResult.noMore;
+    setState(() { _busy = true; _error = null; });
+    try {
+      await followPageRequest.getTopic(onLoad: append);
+      _hasLoaded = true;
+      return IndicatorResult.success;
+    } catch (error) {
+      _error = error;
+      if (_hasLoaded && mounted) RequestFailure.notify(error);
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
-  Future<IndicatorResult> loadData() async {
-    await followPageRequest.getTopic(onLoad: true);
-    setState(() {});
-    return IndicatorResult.success;
+  @override
+  void dispose() {
+    easyRefreshController.dispose();
+    scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -71,18 +91,17 @@ class _FollowPageState extends State<FollowPage> {
         ),
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
-      body: EasyRefresh(
+      body: !_hasLoaded && _error != null
+          ? RequestErrorView(error: _error!, onRetry: refreshData)
+          : !_hasLoaded && _busy ? const Center(child: CircularProgressIndicator())
+          : EasyRefresh(
         controller: easyRefreshController,
         triggerAxis: Axis.vertical,
         header: const MaterialHeader(),
         // footer: const CupertinoFooter(),
         // refreshOnStart: true,
-        onRefresh: () async {
-          await refreshData();
-        },
-        onLoad: () async {
-          await loadData();
-        },
+        onRefresh: refreshData,
+        onLoad: loadData,
 
         child: NestedScrollView(
           // controller: scrollController,

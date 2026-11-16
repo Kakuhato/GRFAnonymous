@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import '../utils/image_decode_size.dart';
 import 'game_data_page.dart';
 import 'settings_page.dart';
@@ -28,13 +30,16 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   MyPageRequest myPageRequest = MyPageRequest();
   bool _isLoading = true;
+  bool _refreshing = false;
+  bool _paging = false;
+  bool _hasLoaded = false;
+  Object? _error;
 
   @override
   void initState() {
+    super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _refresh();
-    // _tabController = TabController(length: 3, vsync: this);
-    super.initState();
   }
 
   @override
@@ -44,59 +49,95 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _refresh() async {
-    await myPageRequest.getUserData();
-    await myPageRequest.getGameData();
-    await myPageRequest.getOwnTopic(
-      onLoad: false,
-      sort_type: SortType.reply,
-      category_id: CategoryId.none,
-      query_type: QueryType.identity,
-      user_id: 0,
-    );
-    await myPageRequest.getFavorTopic(
-      onFresh: true,
-      sortType: SortType.reply,
-      categoryId: CategoryId.none,
-      queryType: QueryType.favor,
-      userId: 0,
-    );
-    await myPageRequest.getReply(
-      onFresh: true,
-      sortType: SortType.reply,
-      categoryId: CategoryId.none,
-      queryType: QueryType.favor,
-      userId: 0,
-    );
-    setState(() {
-      _isLoading = false;
-    });
+    if (_refreshing || _paging) return;
+    _refreshing = true;
+    setState(() { _error = null; _isLoading = !_hasLoaded; });
+    try {
+      await myPageRequest.getUserData();
+      await myPageRequest.getGameData();
+      await myPageRequest.getOwnTopic(
+        onLoad: false,
+        sort_type: SortType.reply,
+        category_id: CategoryId.none,
+        query_type: QueryType.identity,
+        user_id: 0,
+      );
+      await myPageRequest.getFavorTopic(
+        onFresh: true,
+        sortType: SortType.reply,
+        categoryId: CategoryId.none,
+        queryType: QueryType.favor,
+        userId: 0,
+      );
+      await myPageRequest.getReply(
+        onFresh: true,
+        sortType: SortType.reply,
+        categoryId: CategoryId.none,
+        queryType: QueryType.favor,
+        userId: 0,
+      );
+      _hasLoaded = true;
+    } catch (error) {
+      _error = error;
+      if (_hasLoaded && mounted) RequestFailure.notify(error);
+    } finally {
+      _refreshing = false;
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<IndicatorResult> loadOwnTopicData() async {
-    await myPageRequest.getOwnTopic(
-      onLoad: true,
-      user_id: 0,
-    );
-    setState(() {});
-    return IndicatorResult.success;
+    if (_refreshing || _paging) return IndicatorResult.fail;
+    _paging = true;
+    try {
+      await myPageRequest.getOwnTopic(
+        onLoad: true,
+        user_id: 0,
+      );
+      if (mounted) setState(() {});
+      return IndicatorResult.success;
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
+      return IndicatorResult.fail;
+    } finally {
+      _paging = false;
+    }
   }
 
   Future<IndicatorResult> loadFavorTopicData() async {
-    await myPageRequest.getFavorTopic(
-      onFresh: false,
-      userId: 0,
-    );
-    setState(() {});
-    return IndicatorResult.success;
+    if (_refreshing || _paging) return IndicatorResult.fail;
+    _paging = true;
+    try {
+      await myPageRequest.getFavorTopic(
+        onFresh: false,
+        userId: 0,
+      );
+      if (mounted) setState(() {});
+      return IndicatorResult.success;
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
+      return IndicatorResult.fail;
+    } finally {
+      _paging = false;
+    }
   }
 
   Future<IndicatorResult> loadReplyData() async {
-    await myPageRequest.getReply(
-      onFresh: false,
-      userId: 0,
-    );
-    setState(() {});
-    return IndicatorResult.success;
+    if (_refreshing || _paging) return IndicatorResult.fail;
+    _paging = true;
+    try {
+      await myPageRequest.getReply(
+        onFresh: false,
+        userId: 0,
+      );
+      if (mounted) setState(() {});
+      return IndicatorResult.success;
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
+      return IndicatorResult.fail;
+    } finally {
+      _paging = false;
+    }
   }
 
   @override
@@ -144,7 +185,9 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : NestedScrollView(
+          : !_hasLoaded && _error != null
+              ? RequestErrorView(error: _error!, onRetry: _refresh)
+              : NestedScrollView(
               headerSliverBuilder:
                   (BuildContext context, bool innerBoxIsScrolled) => [
                 SliverToBoxAdapter(
@@ -518,10 +561,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
     return EasyRefresh(
       header: const MaterialHeader(),
       onLoad: myPageRequest.ownTopicListParam.nextPage
-          ? () async {
-              await loadOwnTopicData();
-              setState(() {});
-            }
+          ? loadOwnTopicData
           : null,
       child: SingleChildScrollView(
         child: Column(
@@ -750,10 +790,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
     return EasyRefresh(
       header: const MaterialHeader(),
       onLoad: myPageRequest.replyListParam.nextPage
-          ? () async {
-              await loadReplyData();
-              setState(() {});
-            }
+          ? loadReplyData
           : null,
       child: SingleChildScrollView(
         child: Column(
@@ -848,10 +885,7 @@ class _MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
       header: const MaterialHeader(),
       onLoad: myPageRequest.favorTopicListParam.total !=
               myPageRequest.favorTopicList.length
-          ? () async {
-              await loadFavorTopicData();
-              setState(() {});
-            }
+          ? loadFavorTopicData
           : null,
       child: SingleChildScrollView(
         child: Column(

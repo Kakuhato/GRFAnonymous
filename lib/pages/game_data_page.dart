@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../utils/image_decode_size.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +25,8 @@ class _GameDataPageState extends State<GameDataPage> {
   final _request = MyPageRequest();
   GameData? _data;
   bool _loading = true;
-  String? _error;
+  RequestFailure? _error;
+  bool _busy = false;
 
   @override
   void initState() {
@@ -32,6 +35,9 @@ class _GameDataPageState extends State<GameDataPage> {
   }
 
   Future<void> _load() async {
+    if (_busy) return;
+    _busy = true;
+    if (_data == null) setState(() => _loading = true);
     try {
       final data = await _request.fetchGameData(uid: widget.uid);
       if (!mounted) return;
@@ -39,10 +45,11 @@ class _GameDataPageState extends State<GameDataPage> {
         _data = data;
         _error = null;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      setState(() => _error = '游戏数据加载失败，请重试');
+      setState(() => _error = RequestFailure.from(error));
     } finally {
+      _busy = false;
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -67,21 +74,7 @@ class _GameDataPageState extends State<GameDataPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _data == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error ?? '暂无游戏数据'),
-                      TextButton(
-                        onPressed: () {
-                          setState(() => _loading = true);
-                          _load();
-                        },
-                        child: const Text('重新加载'),
-                      ),
-                    ],
-                  ),
-                )
+              ? RequestErrorView(error: _error ?? const RequestFailure(FailureKind.invalidData, '暂无游戏数据'), onRetry: _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
@@ -92,7 +85,7 @@ class _GameDataPageState extends State<GameDataPage> {
                       if (_error != null)
                         Padding(
                           padding: const EdgeInsets.all(16),
-                          child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                          child: Text(_error!.message, style: const TextStyle(color: Colors.red)),
                         ),
                       _section('基础资料', _baseInfo(_data!.baseInfo)),
                       _section(

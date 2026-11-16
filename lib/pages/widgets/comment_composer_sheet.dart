@@ -1,3 +1,4 @@
+import '../../pageRequest/request_failure.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../utils/image_decode_size.dart';
 import 'package:flutter/material.dart';
@@ -101,8 +102,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet> {
     try {
       success = await widget.onSubmit(_controller.toHtml());
       if (mounted && !success) setState(() => _error = '提交失败，请检查登录状态后重试');
-    } catch (_) {
-      if (mounted) setState(() => _error = '提交失败，请检查网络后重试');
+    } catch (error) {
+      final failure = RequestFailure.from(error);
+      if (mounted && !failure.isSilent) setState(() => _error =
+          failure.isNetwork ? '提交结果未确认，请恢复网络后刷新评论查看，避免重复发送' : failure.message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

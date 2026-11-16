@@ -1,3 +1,4 @@
+import 'request_failure.dart';
 import 'package:grfanonymous/models/replyList.dart';
 import 'package:grfanonymous/models/webViewContent.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
@@ -35,14 +36,8 @@ class WebViewRequest {
         throw const TopicRequestException('帖子数据异常，请重试');
       }
       webViewContent = WebViewContent.fromJson(Map<String, dynamic>.from(data));
-    } on DioException catch (error) {
-      if (error.response?.statusCode == 404) {
-        throw const TopicRequestException('帖子不存在或已删除');
-      }
-      if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
-        throw const TopicRequestException('无法查看帖子，请登录后重试');
-      }
-      throw const TopicRequestException('帖子加载失败，请检查网络后重试');
+    } on DioException {
+      rethrow;
     }
   }
 
@@ -104,7 +99,7 @@ class WebViewRequest {
     }
   }
 
-  Future<bool> favorTopic(String topicId) async {
+  Future<bool> favorTopic(String topicId) => runRequestAction('favor:$topicId', () async {
     Response response = await DioInstance.instance().get(
       path: "/community/topic/favor/$topicId",
       param: {
@@ -116,7 +111,7 @@ class WebViewRequest {
     } else {
       return false;
     }
-  }
+  });
 
   //评论
   Future<bool> submitComment(String topicId, String content,{

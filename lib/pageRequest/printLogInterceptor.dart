@@ -1,38 +1,29 @@
 import 'dart:developer';
-import 'package:grfanonymous/utils/hivUtil.dart';
 import 'package:dio/dio.dart';
 
-class PrintLogInterceptor extends InterceptorsWrapper {
+// 不记录请求体、查询参数、凭证和完整响应，避免日志包含登录信息。
+class PrintLogInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    log("\n================== 请求数据 ==========================");
-    options.headers.forEach((key, value) {
-      log("请求头: $key: $value");
-    });
-    log("请求url: ${options.uri}");
-    log("请求方法: ${options.method}");
-    log("请求参数: ${options.data}");
-    options.headers.addAll({
-      "Authorization":
-          HiveUtil.instance().getString(HiveUtil.tokenKey, defaultValue: ""),
-    });
-    super.onRequest(options, handler);
+    options.extra['startedAt'] = DateTime.now();
+    handler.next(options);
+  }
+
+  void _record(RequestOptions request, String result) {
+    final start = request.extra['startedAt'];
+    final elapsed = start is DateTime ? DateTime.now().difference(start).inMilliseconds : 0;
+    log('${request.method} ${request.path} $result ${elapsed}ms', name: 'API');
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    log("\n================== 响应数据 ==========================");
-    log("请求url: ${response.realUri}");
-    log("响应头: ${response.headers.toString()}");
-    log("响应数据: ${response.data}");
-    log("响应状态: ${response.statusCode}");
-    super.onResponse(response, handler);
+    _record(response.requestOptions, 'HTTP ${response.statusCode}');
+    handler.next(response);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    log("\n================== 错误响应数据 ==========================");
-    log("错误信息: ${err.toString()}");
-    super.onError(err, handler);
+  void onError(DioException error, ErrorInterceptorHandler handler) {
+    _record(error.requestOptions, 'HTTP ${error.response?.statusCode ?? "-"} ${error.type.name}');
+    handler.next(error);
   }
 }

@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:grfanonymous/models/bannerItem.dart';
@@ -26,6 +28,8 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   final HomePageRequest homePageRequest = HomePageRequest();
   final LikeAndFollow likeAndFollow = LikeAndFollow();
+  bool _hasLoaded = false;
+  Object? _initialError;
   bool _isSigningIn = false;
   bool _isFeedBusy = false;
   bool _isSwitchingCategory = false;
@@ -43,20 +47,32 @@ class HomePageState extends State<HomePage> {
   Future<IndicatorResult> refreshData() async {
     if (_isFeedBusy) return IndicatorResult.fail;
     _isFeedBusy = true;
+    if (!_hasLoaded) setState(() => _initialError = null);
     try {
-      await Future.wait<void>([
+      // 附属区失败不阻止帖子列表展示；每个异步分支自行接住错误。
+      final extras = Future.wait<void>([
         () async {
-          await homePageRequest.getBanner();
-          await homePageRequest.getTopic(category_id: _category,
-              sort_type: _sort, category_sub_id: _officialSubId);
+          try { await homePageRequest.getBanner(); }
+          catch (error) { if (mounted) RequestFailure.notify(error); }
         }(),
         () async {
-          await likeAndFollow.getSignInStatus();
-          if (mounted) setState(() {});
+          try { await likeAndFollow.getSignInStatus(); }
+          catch (error) { if (mounted) RequestFailure.notify(error); }
         }(),
       ]);
+      try {
+        await homePageRequest.getTopic(category_id: _category,
+            sort_type: _sort, category_sub_id: _officialSubId);
+        _hasLoaded = true;
+        _initialError = null;
+        if (mounted) setState(() {});
+      } finally {
+        await extras;
+      }
       return IndicatorResult.success;
-    } catch (_) {
+    } catch (error) {
+      if (!_hasLoaded) _initialError = error;
+      else if (mounted) RequestFailure.notify(error);
       return IndicatorResult.fail;
     } finally {
       _isFeedBusy = false;
@@ -74,7 +90,8 @@ class HomePageState extends State<HomePage> {
       return homePageRequest.nextPage
           ? IndicatorResult.success
           : IndicatorResult.noMore;
-    } catch (_) {
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
       return IndicatorResult.fail;
     } finally {
       _isFeedBusy = false;
@@ -106,8 +123,8 @@ class HomePageState extends State<HomePage> {
         _sort = targetSort;
         _officialSubId = targetSubId;
       });
-    } catch (_) {
-      if (mounted) showToast('列表加载失败，请重试');
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
     } finally {
       _isFeedBusy = false;
       if (mounted) setState(() => _isSwitchingCategory = false);
@@ -141,8 +158,8 @@ class HomePageState extends State<HomePage> {
       final signedIn = await likeAndFollow.doSignIn();
       if (!mounted) return;
       if (signedIn) setState(() {});
-    } catch (_) {
-      if (mounted) showToast('签到失败，请重试');
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
     } finally {
       if (mounted) setState(() => _isSigningIn = false);
     }
@@ -194,7 +211,11 @@ class HomePageState extends State<HomePage> {
         ),
       ),
       backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
-      body: HomeFeed(
+      body: !_hasLoaded && _initialError != null
+          ? RequestErrorView(error: _initialError!, onRetry: refreshData)
+          : !_hasLoaded && _isFeedBusy
+              ? const Center(child: CircularProgressIndicator())
+              : HomeFeed(
         category: _category,
         sort: _sort,
         officialSubId: _officialSubId,

@@ -1,3 +1,4 @@
+import 'comment_like_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import '../../models/replyList.dart';
@@ -11,10 +12,11 @@ import 'topic_author_badge.dart';
 /// 评论展示与请求解耦，供帖子列表和独立回复面板复用。
 class CommentCard extends StatelessWidget {
   const CommentCard({super.key, required this.reply, required this.onReply,
-    required this.onLike, required this.onTapUrl, this.replies});
+    required this.onLike, required this.onTapUrl, this.replies, this.isLikeBusy = false});
   final SingleComment reply;
   final VoidCallback onReply;
   final VoidCallback? onLike;
+  final bool isLikeBusy;
   final Future<bool> Function(String) onTapUrl;
   final Widget? replies;
 
@@ -25,7 +27,7 @@ class CommentCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       margin: const EdgeInsets.symmetric(horizontal: 10)
           .add(const EdgeInsets.only(top: 10)),
       child: Column(
@@ -43,7 +45,6 @@ class CommentCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.only(
               left: 45,
-              bottom: 5,
             ),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -67,32 +68,13 @@ class CommentCard extends StatelessWidget {
           // 次级回复区域
           if (replies != null) replies!,
 
-          const SizedBox(height: 8),
           // 点赞、评论按钮区域
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              GestureDetector(
-                onTap: onLike,
-                child: Row(
-                  children: [
-                    Image.asset(
-                      reply.isLike ? "assets/liked.png" : "assets/likes.png",
-                      width: UiSizeUtil.postCommentLikeIconSize,
-                      height: UiSizeUtil.postCommentLikeIconSize,
-                    ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Text(
-                        reply.likeNum.toString(),
-                        style: TextStyle(
-                          fontSize: UiSizeUtil.postCommentLikeFontSize,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              CommentLikeButton(
+                isLiked: reply.isLike, count: reply.likeNum,
+                onTap: onLike, busy: isLikeBusy,
               ),
               const SizedBox(width: 10),
               GestureDetector(
@@ -128,10 +110,11 @@ class CommentCard extends StatelessWidget {
 class CommentReplyCard extends StatelessWidget {
   const CommentReplyCard({super.key, required this.reply, required this.onReply,
     required this.onLike, required this.onTapUrl, this.inSheet = false,
-    this.topicAuthorId});
+    this.topicAuthorId, this.isLikeBusy = false});
   final CommentReply reply;
   final VoidCallback onReply;
   final VoidCallback? onLike;
+  final bool isLikeBusy;
   final Future<bool> Function(String) onTapUrl;
   final bool inSheet;
   final int? topicAuthorId;
@@ -140,7 +123,7 @@ class CommentReplyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(left: inSheet ? 0 : 45),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       decoration: BoxDecoration(
         color: inSheet ? Colors.white : Colors.grey[200],
         // borderRadius: BorderRadius.circular(8),
@@ -230,32 +213,9 @@ class CommentReplyCard extends StatelessWidget {
                   ),
                 ),
               ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onLike,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        reply.isLike ? 'assets/liked.png' : 'assets/likes.png',
-                        width: UiSizeUtil.postCommentLikeIconSize,
-                        height: UiSizeUtil.postCommentLikeIconSize,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Text(
-                          reply.likeNum.toString(),
-                          style: TextStyle(
-                            fontSize: UiSizeUtil.postCommentLikeFontSize,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              CommentLikeButton(
+                isLiked: reply.isLike, count: reply.likeNum,
+                onTap: onLike, busy: isLikeBusy,
               ),
               const SizedBox(width: 10),
               GestureDetector(

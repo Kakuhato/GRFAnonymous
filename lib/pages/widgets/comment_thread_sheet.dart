@@ -1,3 +1,4 @@
+import '../../pageRequest/request_failure.dart';
 import 'package:flutter/material.dart';
 import 'package:oktoast/oktoast.dart';
 import '../../models/replyList.dart';
@@ -131,8 +132,9 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
         reply.likeNum = (reply.likeNum + (reply.isLike ? 1 : -1)).clamp(0, 1 << 31).toInt();
       }
       dataChanged = true;
-    } catch (_) {
-      if (mounted) showToast('操作失败，请检查网络或登录状态');
+      showToast((reply?.isLike ?? parent.isLike) ? '点赞成功' : '取消点赞');
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
     } finally {
       _pendingLikes.remove(id);
       _notify(dataChanged: dataChanged);
@@ -208,6 +210,7 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
           if (parent != null)
             CommentCard(
               reply: parent, onTapUrl: _openLink,
+              isLikeBusy: _loading || _pendingLikes.contains(parent.commentId),
               onLike: _loading || _pendingLikes.contains(parent.commentId)
                   ? null : () => _like(),
               onReply: () => _reply(),
@@ -225,6 +228,7 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
         return CommentReplyCard(
           reply: reply, inSheet: true, topicAuthorId: _topicAuthorId,
           onTapUrl: _openLink,
+          isLikeBusy: _loading || _pendingLikes.contains(reply.commentId),
           onLike: _loading || _pendingLikes.contains(reply.commentId)
               ? null : () => _like(reply: reply),
           onReply: () => _reply(reply: reply),

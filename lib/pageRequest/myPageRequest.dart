@@ -1,3 +1,4 @@
+import 'request_failure.dart';
 import 'package:grfanonymous/models/userData.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
@@ -78,8 +79,10 @@ class MyPageRequest {
   Future getGameData() async {
     try {
       gameData = await fetchGameData();
-    } catch (_) {
-      showToast("游戏信息获取失败");
+    } catch (error) {
+      final failure = RequestFailure.from(error);
+      if (failure.isNetwork || failure.isSilent) rethrow;
+      RequestFailure.notify(error);
     }
   }
 
@@ -125,8 +128,10 @@ class MyPageRequest {
   Future getOtherGameData(String uid) async {
     try {
       gameData = await fetchGameData(uid: int.parse(uid));
-    } catch (_) {
-      showToast("游戏信息获取失败");
+    } catch (error) {
+      final failure = RequestFailure.from(error);
+      if (failure.isNetwork || failure.isSilent) rethrow;
+      RequestFailure.notify(error);
     }
   }
 
@@ -143,51 +148,55 @@ class MyPageRequest {
   }) async {
     if (_isLoading) return;
     _isLoading = true;
-    Response response;
-    if (onLoad == false) {
-      response = await DioInstance.instance()
-          .get(path: "/community/topic/list", param: {
-        "sort_type": sort_type.type,
-        "category_id": category_id.type,
-        "query_type": query_type.type,
-        "last_tid": last_tid,
-        "pub_time": pub_time,
-        "reply_time": reply_time,
-        "hot_value": hot_value,
-        "user_id": user_id,
-      });
-    } else {
-      response = await DioInstance.instance()
-          .get(path: "/community/topic/list", param: {
-        "sort_type": ownTopicListParam.sortType.type,
-        "category_id": ownTopicListParam.categoryId.type,
-        "query_type": ownTopicListParam.queryType.type,
-        "last_tid": ownTopicListParam.lastTid,
-        "pub_time": ownTopicListParam.pubTime,
-        "user_id": user_id,
-      });
-    }
-    if (response.data["Code"] == 0 &&
-        (response.data['data']['list'] as List).isNotEmpty) {
-      var list = response.data['data']['list'] as List;
-
-      ownTopicListParam.lastTid = response.data['data']['last_tid'];
-      ownTopicListParam.nextPage = response.data['data']['next_page'];
-      ownTopicListParam.pubTime = response.data['data']['pub_time'];
-      ownTopicListParam.total = response.data['data']['total'];
-      ownTopicListParam.sortType = sort_type;
-      ownTopicListParam.categoryId = category_id;
-      ownTopicListParam.queryType = query_type;
-      if (!onLoad) {
-        ownTopicList = list.map((i) => Topic.fromJson(i)).toList();
+    try {
+      Response response;
+      if (onLoad == false) {
+        response = await DioInstance.instance()
+            .get(path: "/community/topic/list", param: {
+          "sort_type": sort_type.type,
+          "category_id": category_id.type,
+          "query_type": query_type.type,
+          "last_tid": last_tid,
+          "pub_time": pub_time,
+          "reply_time": reply_time,
+          "hot_value": hot_value,
+          "user_id": user_id,
+        });
       } else {
-        ownTopicList.addAll(list.map((i) => Topic.fromJson(i)).toList());
+        response = await DioInstance.instance()
+            .get(path: "/community/topic/list", param: {
+          "sort_type": ownTopicListParam.sortType.type,
+          "category_id": ownTopicListParam.categoryId.type,
+          "query_type": ownTopicListParam.queryType.type,
+          "last_tid": ownTopicListParam.lastTid,
+          "pub_time": ownTopicListParam.pubTime,
+          "user_id": user_id,
+        });
       }
-    } else {
-      ownTopicList = [];
-      ownTopicListParam.nextPage = false;
+      if (response.data["Code"] == 0 &&
+          (response.data['data']['list'] as List).isNotEmpty) {
+        final list = response.data['data']['list'] as List;
+        final topics = list.map((item) => Topic.fromJson(item)).toList();
+
+        ownTopicListParam.lastTid = response.data['data']['last_tid'];
+        ownTopicListParam.nextPage = response.data['data']['next_page'];
+        ownTopicListParam.pubTime = response.data['data']['pub_time'];
+        ownTopicListParam.total = response.data['data']['total'];
+        ownTopicListParam.sortType = sort_type;
+        ownTopicListParam.categoryId = category_id;
+        ownTopicListParam.queryType = query_type;
+        if (!onLoad) {
+          ownTopicList = topics;
+        } else {
+          ownTopicList.addAll(topics);
+        }
+      } else {
+        if (!onLoad) ownTopicList = [];
+        ownTopicListParam.nextPage = false;
+      }
+    } finally {
+      _isLoading = false;
     }
-    _isLoading = false;
   }
 
   Future getFavorTopic({
@@ -201,35 +210,39 @@ class MyPageRequest {
   }) async {
     if (_isLoading) return;
     _isLoading = true;
-    Response response = await DioInstance.instance().get(
-      path: "/community/topic/list",
-      param: {
-        "sort_type": favorTopicListParam.sortType.type,
-        "category_id": favorTopicListParam.categoryId.type,
-        "query_type": favorTopicListParam.queryType.type,
-        "page_num": onFresh ? 1 : favorTopicListParam.pageNum + 1,
-        "page_size": pageSize,
-        "user_id": userId,
-      },
-    );
-    if (response.data["Code"] == 0 &&
-        (response.data['data']['list'] as List).isNotEmpty) {
-      if (onFresh) {
-        favorTopicList = response.data['data']['list']
-            .map<Topic>((item) => Topic.fromJson(item))
-            .toList();
-        favorTopicListParam.pageNum = 1;
+    try {
+      Response response = await DioInstance.instance().get(
+        path: "/community/topic/list",
+        param: {
+          "sort_type": favorTopicListParam.sortType.type,
+          "category_id": favorTopicListParam.categoryId.type,
+          "query_type": favorTopicListParam.queryType.type,
+          "page_num": onFresh ? 1 : favorTopicListParam.pageNum + 1,
+          "page_size": pageSize,
+          "user_id": userId,
+        },
+      );
+      if (response.data["Code"] == 0 &&
+          (response.data['data']['list'] as List).isNotEmpty) {
+        if (onFresh) {
+          favorTopicList = response.data['data']['list']
+              .map<Topic>((item) => Topic.fromJson(item))
+              .toList();
+          favorTopicListParam.pageNum = 1;
+        } else {
+          favorTopicList.addAll(response.data['data']['list']
+              .map<Topic>((item) => Topic.fromJson(item))
+              .toList());
+          favorTopicListParam.pageNum++;
+        }
+        favorTopicListParam.total = response.data['data']['total'];
       } else {
-        favorTopicList.addAll(response.data['data']['list']
-            .map<Topic>((item) => Topic.fromJson(item))
-            .toList());
-        favorTopicListParam.pageNum++;
+        if (onFresh) favorTopicList = [];
+        favorTopicListParam.total = favorTopicList.length;
       }
-      favorTopicListParam.total = response.data['data']['total'];
-    } else {
-      favorTopicList = [];
+    } finally {
+      _isLoading = false;
     }
-    _isLoading = false;
   }
 
   Future getReply({
@@ -243,40 +256,44 @@ class MyPageRequest {
   }) async {
     if (_isLoading) return;
     _isLoading = true;
-    Response response = await DioInstance.instance().post(
-      path: "/community/comment/user_own_list",
-      data: {
-        "sort_type": replyListParam.sortType.type,
-        "category_id": replyListParam.categoryId.type,
-        "query_type": replyListParam.queryType.type,
-        "page_num": onFresh ? 1 : replyListParam.pageNum + 1,
-        "page_size": pageSize,
-        "user_id": userId,
-        "last_tid": onFresh ? 0 : replyListParam.lastTid,
-        "create_time": onFresh ? 0 : replyListParam.createTime,
-      },
-    );
-    if(response.data["Code"] == 0 && response.data['data']['list'].isNotEmpty) {
-      if (onFresh) {
-        replyList = response.data['data']['list']
-            .map<MyReply>((item) => MyReply.fromJson(item))
-            .toList();
-        replyListParam.pageNum = 1;
-        replyListParam.lastTid = response.data['data']['last_tid'];
-        replyListParam.createTime = response.data['data']['create_time'];
+    try {
+      Response response = await DioInstance.instance().post(
+        path: "/community/comment/user_own_list",
+        data: {
+          "sort_type": replyListParam.sortType.type,
+          "category_id": replyListParam.categoryId.type,
+          "query_type": replyListParam.queryType.type,
+          "page_num": onFresh ? 1 : replyListParam.pageNum + 1,
+          "page_size": pageSize,
+          "user_id": userId,
+          "last_tid": onFresh ? 0 : replyListParam.lastTid,
+          "create_time": onFresh ? 0 : replyListParam.createTime,
+        },
+      );
+      if(response.data["Code"] == 0 && response.data['data']['list'].isNotEmpty) {
+        if (onFresh) {
+          replyList = response.data['data']['list']
+              .map<MyReply>((item) => MyReply.fromJson(item))
+              .toList();
+          replyListParam.pageNum = 1;
+          replyListParam.lastTid = response.data['data']['last_tid'];
+          replyListParam.createTime = response.data['data']['create_time'];
+        } else {
+          replyList.addAll(response.data['data']['list']
+              .map<MyReply>((item) => MyReply.fromJson(item))
+              .toList());
+          replyListParam.pageNum++;
+          replyListParam.lastTid = response.data['data']['last_tid'];
+          replyListParam.createTime = response.data['data']['create_time'];
+        }
+        replyListParam.nextPage = response.data['data']['next_page'];
       } else {
-        replyList.addAll(response.data['data']['list']
-            .map<MyReply>((item) => MyReply.fromJson(item))
-            .toList());
-        replyListParam.pageNum++;
-        replyListParam.lastTid = response.data['data']['last_tid'];
-        replyListParam.createTime = response.data['data']['create_time'];
+        if (onFresh) replyList = [];
+        replyListParam.nextPage = false;
       }
-      replyListParam.nextPage = response.data['data']['next_page'];
-    } else {
-      replyList = [];
+    } finally {
+      _isLoading = false;
     }
-    _isLoading = false;
   }
 
 }

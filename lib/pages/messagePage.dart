@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import '../utils/image_decode_size.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -29,6 +31,8 @@ class MessagePage extends StatefulWidget {
 class _MessagePageState extends State<MessagePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _loadedTabs = List<bool>.filled(4, false);
+  final _tabErrors = List<Object?>.filled(4, null);
   bool _replySheetOpen = false;
   Future<IndicatorResult>? _refreshFuture;
 
@@ -51,15 +55,26 @@ class _MessagePageState extends State<MessagePage>
   }
 
   Future<IndicatorResult> _refreshNotifications() async {
+    final requests = <Future<void> Function()>[
+      () async { await replyNotificationRequest.getReplyNotification(true); },
+      () async { await likeNotificationRequest.getLikeNotification(true); },
+      () async { await followNotificationRequest.getFollowNotification(true); },
+      () async { await infoNotificationRequest.getInfoNotification(true); },
+    ];
+    for (var i = 0; i < 4; i++) { _tabErrors[i] = null; }
     try {
-      await replyNotificationRequest.getReplyNotification(true);
-      await likeNotificationRequest.getLikeNotification(true);
-      await followNotificationRequest.getFollowNotification(true);
-      await infoNotificationRequest.getInfoNotification(true);
-      return IndicatorResult.success;
-    } catch (_) {
-      if (mounted) showToast('消息刷新失败，请稍后重试');
-      return IndicatorResult.fail;
+      final results = await Future.wait(List.generate(4, (index) async {
+        try {
+          await requests[index]();
+          _loadedTabs[index] = true;
+          return true;
+        } catch (error) {
+          _tabErrors[index] = error;
+          if (_loadedTabs[index] && mounted) RequestFailure.notify(error);
+          return false;
+        }
+      }));
+      return results.every((success) => success) ? IndicatorResult.success : IndicatorResult.fail;
     } finally {
       _refreshFuture = null;
       if (mounted) setState(() {});
@@ -103,9 +118,11 @@ class _MessagePageState extends State<MessagePage>
           actions: [
             IconButton(
                 onPressed: () async {
-                  await replyNotificationRequest.readAll();
-                  _clearAll();
-                  setState(() {});
+                  final success = await runRequestAction('messages:readAll', () async {
+                    await replyNotificationRequest.readAll();
+                    return true;
+                  });
+                  if (mounted && success) _clearAll();
                 },
                 icon: Icon(
                   Icons.cleaning_services_outlined,
@@ -199,12 +216,21 @@ class _MessagePageState extends State<MessagePage>
   }
 
   Widget _buildNotificationList({
+    required int tab,
     required String storageKey,
     required int itemCount,
     required int total,
     required IndexedWidgetBuilder itemBuilder,
     required Future<void> Function() onLoad,
   }) {
+    if (!_loadedTabs[tab]) {
+      final error = _tabErrors[tab];
+      if (error != null) return RequestErrorView(error: error, onRetry: () {
+        _notificationListInit();
+        setState(() {});
+      });
+      return const Center(child: CircularProgressIndicator());
+    }
     final hasMore = itemCount < total;
     return EasyRefresh.builder(
       fit: StackFit.expand,
@@ -220,8 +246,8 @@ class _MessagePageState extends State<MessagePage>
           if (!mounted) return IndicatorResult.fail;
           await onLoad();
           return IndicatorResult.success;
-        } catch (_) {
-          if (mounted) showToast('消息加载失败，请稍后重试');
+        } catch (error) {
+          if (mounted) RequestFailure.notify(error);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -248,6 +274,7 @@ class _MessagePageState extends State<MessagePage>
   Widget _buildRplyTab() {
     final items = List.of(replyNotificationRequest.replyList);
     return _buildNotificationList(
+      tab: 0,
       storageKey: 'replies',
       itemCount: items.length,
       total: replyNotificationRequest.total,
@@ -365,6 +392,7 @@ class _MessagePageState extends State<MessagePage>
   Widget _buildLikesTab() {
     final items = List.of(likeNotificationRequest.likeList);
     return _buildNotificationList(
+      tab: 1,
       storageKey: 'likes',
       itemCount: items.length,
       total: likeNotificationRequest.total,
@@ -459,6 +487,7 @@ class _MessagePageState extends State<MessagePage>
   Widget _buildFollowingTab() {
     final items = List.of(followNotificationRequest.followList);
     return _buildNotificationList(
+      tab: 2,
       storageKey: 'follows',
       itemCount: items.length,
       total: followNotificationRequest.total,
@@ -552,6 +581,7 @@ class _MessagePageState extends State<MessagePage>
   Widget _buildInfoTab() {
     final items = List.of(infoNotificationRequest.infoList);
     return _buildNotificationList(
+      tab: 3,
       storageKey: 'info',
       itemCount: items.length,
       total: infoNotificationRequest.total,

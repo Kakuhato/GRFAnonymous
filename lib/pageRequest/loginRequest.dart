@@ -1,13 +1,10 @@
+import '../utils/auth_session.dart';
 import 'dart:convert';
-import 'package:grfanonymous/pageRequest/cookieInterceptor.dart';
-import 'package:grfanonymous/utils/hivUtil.dart';
-import 'package:grfanonymous/utils/routeUtil.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:crypto/crypto.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:typed_data';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
 
@@ -74,8 +71,7 @@ class LoginRequest with ChangeNotifier {
 
     var code = response.data['Code'];
     if (code == 0) {
-      HiveUtil.instance().setString(
-          HiveUtil.tokenKey, response.data['data']['account']['token']);
+      await AuthSession.instance.saveToken(response.data['data']['account']['token'] as String);
       return true;
     } else {
       showToast(response.data['Message'].toString());
@@ -93,8 +89,7 @@ class LoginRequest with ChangeNotifier {
     );
     var code = response.data['Code'];
     if (code == 0) {
-      HiveUtil.instance().setString(
-          HiveUtil.tokenKey, response.data['data']['account']['token']);
+      await AuthSession.instance.saveToken(response.data['data']['account']['token'] as String);
       return true;
     } else {
       showToast(response.data['Message'].toString());
@@ -120,46 +115,12 @@ class LoginRequest with ChangeNotifier {
     }
   }
 
+  // 网络失败向上传递，不能把无法验证当成未登录。
   static Future<bool> isLogin() async {
-    try {
-      Response response = await DioInstance.instance().post(
-        path: "/community/member/info",
-        data: {},
-      );
-
-      // 检查状态码是否为 401，或是否未设置 Token
-      // if (response.statusCode == 401 ||
-      //     HiveUtil.instance().getString(HiveUtil.tokenKey) == "") {
-      //   return false;
-      // }
-      if(response.data["Code"] == 0 && HiveUtil.instance().getString(HiveUtil.tokenKey) != ""){
-        return true;
-      }
-      // 其他处理逻辑
-      return false;
-
-    } on DioException catch (e) {
-      if (e.response != null && e.response!.statusCode == 401) {
-        // showToast("登录过期，请重新登录");
-        return false;
-      } else {
-        // showToast("网络错误，请稍后再试");
-        return false;
-      }
-    } catch (e) {
-      // showToast("未知错误，请稍后再试");
-      return false;
-    }
-
-    if (HiveUtil.instance().getString(HiveUtil.tokenKey) == "") {
-      return false;
-    } else {
-      return true;
-    }
+    if (AuthSession.instance.token.isEmpty) return false;
+    await DioInstance.instance().post(path: '/community/member/info', data: {});
+    return true;
   }
 
-  static Future<void> exit() async {
-    await HiveUtil.instance().setString(HiveUtil.tokenKey, "");
-    await CookieInterceptor.clear();
-  }
+  static Future<void> exit() => AuthSession.instance.logout();
 }

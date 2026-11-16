@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'widgets/topic_detail_header.dart';
 import 'widgets/topic_detail_metadata.dart';
 import 'widgets/comment_cards.dart';
@@ -38,7 +40,7 @@ class _WebViewPageState extends State<WebViewPage> {
   LikeAndFollow likeAndFollow = LikeAndFollow();
   WebViewRequest webViewRequest = WebViewRequest();
   bool isLoading = true;
-  String? _loadError;
+  Object? _loadError;
   String? _commentError;
   bool _initializing = false;
   bool _commentsLoading = false;
@@ -58,6 +60,8 @@ class _WebViewPageState extends State<WebViewPage> {
   String selectedOption2 = "默认";
   bool isAuther = false;
   int sortType = 0;
+  int _loadedSort = 0;
+  bool _loadedOnlyAuthor = false;
 
   @override
   initState() {
@@ -98,7 +102,7 @@ class _WebViewPageState extends State<WebViewPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _loadError = error is TopicRequestException
-          ? error.message : '帖子加载失败，请重试');
+          ? RequestFailure(FailureKind.invalidData, error.message) : error);
     } finally {
       _initializing = false;
       if (mounted) setState(() => isLoading = false);
@@ -107,24 +111,28 @@ class _WebViewPageState extends State<WebViewPage> {
 
   Future<IndicatorResult> _loadComments({bool isInit = true}) async {
     if (!mounted || _commentsLoading) return IndicatorResult.fail;
-    if (isInit) _resetCommentScroll();
     setState(() {
       _commentsLoading = true;
       _commentError = null;
       _retryCommentsFromStart = isInit;
-      if (isInit) {
-        webViewRequest.replyList = [];
-        webViewRequest.hasNext = false;
-      }
     });
     try {
       await webViewRequest.getReplyList(widget.topicId,
           isInit: isInit, isAuther: isAuther, sort: sortType);
+      if (!mounted) return IndicatorResult.fail;
+      if (isInit) _resetCommentScroll();
+      _loadedSort = sortType;
+      _loadedOnlyAuthor = isAuther;
       // 是否继续加载由 hasNext 控制，避免切换评论筛选后残留 noMore 状态。
       return IndicatorResult.success;
     } catch (error) {
-      if (mounted) setState(() => _commentError = error is TopicRequestException
-          ? error.message : '评论加载失败，请重试');
+      if (mounted) setState(() {
+        _commentError = error is TopicRequestException ? error.message : RequestFailure.from(error).message;
+        sortType = _loadedSort;
+        isAuther = _loadedOnlyAuthor;
+        selectedOption1 = isAuther ? '只看楼主' : '所有评论';
+        selectedOption2 = ['默认', '最早', '最新'][sortType];
+      });
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() => _commentsLoading = false);
@@ -151,7 +159,8 @@ class _WebViewPageState extends State<WebViewPage> {
       ));
     } catch (error) {
       if (mounted && context.mounted && ModalRoute.of(context)?.isCurrent == true) {
-        showToast(error is TopicRequestException ? error.message : '帖子加载失败，请重试');
+        if (error is TopicRequestException) showToast(error.message);
+        else RequestFailure.notify(error);
       }
     } finally {
       _isOpeningTopicLink = false;
@@ -261,16 +270,7 @@ class _WebViewPageState extends State<WebViewPage> {
     // 只构建当前状态，不让隐藏的正文、图片或评论参与布局。
     if (isLoading) return const Center(child: CircularProgressIndicator());
     if (_loadError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(_loadError!, textAlign: TextAlign.center),
-            TextButton(onPressed: initTopic, child: const Text('重新加载')),
-            TextButton(onPressed: () => Navigator.maybePop(context), child: const Text('返回')),
-          ]),
-        ),
-      );
+      return RequestErrorView(error: _loadError!, onRetry: initTopic);
     }
     return EasyRefresh(
               triggerAxis: Axis.vertical,
@@ -553,8 +553,8 @@ class _WebViewPageState extends State<WebViewPage> {
       if (!mounted || !success) return;
       setState(() => topic.isFollow = !topic.isFollow);
       homeScaffoldState?.updateFollowState(topic.userId, topic.isFollow);
-    } catch (_) {
-      if (mounted) showToast('关注操作失败，请重试');
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
     } finally {
       if (mounted) setState(() => _isFollowing = false);
     }
@@ -658,6 +658,7 @@ class _WebViewPageState extends State<WebViewPage> {
       reply: reply,
       replies: _secondaryReplyListBuilder(reply),
       onTapUrl: (url) => _openTopicLink(url),
+      isLikeBusy: _pendingReplyLikes.contains(reply.commentId),
       onLike: _pendingReplyLikes.contains(reply.commentId)
           ? null : () => _likeParentReply(reply),
       onReply: () => _openCommentComposer(
@@ -680,8 +681,9 @@ class _WebViewPageState extends State<WebViewPage> {
       }
       reply.isLike = !reply.isLike;
       reply.likeNum = (reply.likeNum + (reply.isLike ? 1 : -1)).clamp(0, 1 << 31).toInt();
-    } catch (_) {
-      if (mounted) showToast('操作失败，请稍后重试');
+      showToast(reply.isLike ? '点赞成功' : '取消点赞');
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
     } finally {
       _pendingReplyLikes.remove(reply.commentId);
       _notifyComment(reply.commentId);
@@ -753,8 +755,8 @@ class _WebViewPageState extends State<WebViewPage> {
         reply.likeNum--;
       }
       showToast(reply.isLike ? '点赞成功' : '取消点赞');
-    } catch (_) {
-      if (mounted) showToast('操作失败，请检查网络或登录状态后重试');
+    } catch (error) {
+      if (mounted) RequestFailure.notify(error);
     } finally {
       _pendingReplyLikes.remove(reply.commentId);
       _notifyComment(parentId);
@@ -766,6 +768,7 @@ class _WebViewPageState extends State<WebViewPage> {
       reply: reply,
       topicAuthorId: webViewRequest.webViewContent.userId,
       onTapUrl: (url) => _openTopicLink(url),
+      isLikeBusy: _pendingReplyLikes.contains(reply.commentId),
       onLike: _pendingReplyLikes.contains(reply.commentId)
           ? null : () => _likeSecondaryReply(reply, replyId),
       onReply: () => _openCommentComposer(

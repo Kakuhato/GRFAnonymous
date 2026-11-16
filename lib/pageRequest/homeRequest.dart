@@ -1,9 +1,9 @@
+import 'request_failure.dart';
 import 'package:grfanonymous/models/bannerItem.dart';
 import 'package:grfanonymous/models/topicList.dart';
 import 'package:grfanonymous/pageRequest/requestUtils.dart';
 import 'package:dio/dio.dart';
 import 'package:grfanonymous/models/top_topic.dart';
-import 'package:oktoast/oktoast.dart';
 
 class HomePageRequest {
   List<BannerItem> bannerList = [];
@@ -48,10 +48,11 @@ class HomePageRequest {
           .map((item) => TopTopic.fromJson(item))
           .where((item) => item.topicId > 0 && item.title.isNotEmpty)
           .toList();
-    } catch (_) {
-      // 公告失败不阻塞帖子；清空以免显示上一分类的公告。
-      showToast('公告加载失败，下拉刷新可重试');
-      return [];
+    } catch (error) {
+      if (RequestFailure.from(error).isSilent) rethrow;
+      RequestFailure.notify(error);
+      // 刷新失败保留当前分类的公告；切换分类时不显示旧分类公告。
+      return category == categoryId ? topTopics : [];
     }
   }
 

@@ -1,3 +1,5 @@
+import '../pageRequest/request_failure.dart';
+import 'widgets/request_error_view.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/topicList.dart';
@@ -30,7 +32,7 @@ class _SearchPageState extends State<SearchPage> {
   SearchType _searchType = SearchType.topics;
   CancelToken? _cancelToken;
   String _keyword = '';
-  String? _error;
+  RequestFailure? _error;
   String? _openedTopicId;
   int _requestId = 0;
   int _page = 0;
@@ -130,7 +132,9 @@ class _SearchPageState extends State<SearchPage> {
       });
     } catch (error) {
       if (!mounted || requestId != _requestId || token.isCancelled) return;
-      setState(() => _error = error is TopicSearchException ? error.message : '搜索失败，请重试');
+      if (RequestFailure.from(error).isSilent) return;
+      setState(() => _error = error is TopicSearchException
+          ? RequestFailure(FailureKind.invalidData, error.message) : RequestFailure.from(error));
     } finally {
       if (mounted && requestId == _requestId) setState(() => _loading = false);
     }
@@ -141,7 +145,7 @@ class _SearchPageState extends State<SearchPage> {
     try {
       final success = await _likeAndFollow.like(topic.topicId.toString());
       if (!mounted) return;
-      if (!success) throw StateError('点赞失败');
+      if (!success) return;
       setState(() {
         topic.isLike = !topic.isLike;
         topic.likeNum += topic.isLike ? 1 : -1;
@@ -226,13 +230,7 @@ class _SearchPageState extends State<SearchPage> {
     if (_keyword.isEmpty) return Center(child: Text('输入关键词搜索${_searchType.label}'));
     if (_loading && _resultCount == 0) return const Center(child: CircularProgressIndicator());
     if (_error != null && _resultCount == 0) {
-      return Center(child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(_error!, textAlign: TextAlign.center),
-          TextButton(onPressed: () => _fetch(reset: true, tryDirect: true), child: const Text('重试')),
-        ],
-      ));
+      return RequestErrorView(error: _error!, onRetry: () => _fetch(reset: true, tryDirect: true));
     }
     if (_openedTopicId != null) {
       return Center(child: Column(
@@ -282,7 +280,7 @@ class _SearchPageState extends State<SearchPage> {
           }
           if (_error != null) {
             return Column(children: [
-              Text(_error!, textAlign: TextAlign.center),
+              Text(_error!.message, textAlign: TextAlign.center),
               TextButton(onPressed: () => _fetch(), child: const Text('重试加载')),
             ]);
           }

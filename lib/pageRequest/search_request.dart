@@ -1,3 +1,4 @@
+import 'request_failure.dart';
 import 'package:dio/dio.dart';
 import 'package:html/parser.dart' as html;
 import '../models/topicList.dart';
@@ -37,12 +38,8 @@ class SearchRequest {
         cancelToken: cancelToken,
       );
     } on DioException catch (error) {
-      if (CancelToken.isCancel(error)) rethrow;
-      if (error.response?.statusCode == 404) return false;
-      if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
-        throw const TopicSearchException('无法查看帖子，请登录后重试');
-      }
-      throw const TopicSearchException('暂时无法确认帖子是否存在，请重试');
+      if (RequestFailure.from(error).kind == FailureKind.notFound) return false;
+      rethrow;
     }
     final body = response.data;
     if (body is! Map) throw const TopicSearchException('帖子响应异常，请重试');
@@ -79,10 +76,7 @@ class SearchRequest {
         },
         cancelToken: cancelToken,
       );
-    } on DioException catch (error) {
-      if (error.response?.statusCode == 401 || error.response?.statusCode == 403) {
-        throw const TopicSearchException('请先登录；如果已经登录，请重新登录后搜索');
-      }
+    } on DioException {
       rethrow;
     }
     final body = response.data;
