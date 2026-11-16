@@ -1,6 +1,7 @@
 import '../pageRequest/request_failure.dart';
 import 'widgets/request_error_view.dart';
 import 'widgets/topic_detail_header.dart';
+import 'widgets/topic_hidden_content.dart';
 import 'widgets/topic_detail_metadata.dart';
 import 'widgets/comment_cards.dart';
 import 'widgets/comment_thread_sheet.dart';
@@ -21,6 +22,7 @@ import '../ui/uiSizeUtil.dart';
 import '../utils/globalKey.dart';
 import '../utils/routeUtil.dart';
 import '../utils/topic_link.dart';
+import '../utils/user_link.dart';
 import '../models/webViewContent.dart';
 import 'otherUserPage.dart';
 import 'theme_detail_page.dart';
@@ -141,6 +143,18 @@ class _WebViewPageState extends State<WebViewPage> {
 
   Future<bool> _openTopicLink(String url, {BuildContext? sourceContext}) async {
     final context = sourceContext ?? this.context;
+    final uid = UserLink.parseHref(url);
+    if (uid != null) {
+      if (!mounted || !context.mounted || _isOpeningTopicLink ||
+          ModalRoute.of(context)?.isCurrent != true) return true;
+      _isOpeningTopicLink = true;
+      try {
+        await RouteUtils.push(context, OtherUserPage(uid: uid));
+      } finally {
+        _isOpeningTopicLink = false;
+      }
+      return true;
+    }
     final topicId = TopicLink.parseHref(url);
     if (topicId == null) return false;
     // 已识别的社区帖子链接始终由 App 接管，失败也不回退到浏览器。
@@ -574,6 +588,7 @@ class _WebViewPageState extends State<WebViewPage> {
 
   Widget _contentBuilder() {
     final topic = webViewRequest.webViewContent;
+    final hiddenById = {for (final item in topic.hideInfo) item.hd: item};
     return Container(
       padding: const EdgeInsets.all(10),
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
@@ -587,6 +602,15 @@ class _WebViewPageState extends State<WebViewPage> {
           SelectionArea(
             child: HtmlWidget(
               topic.content,
+              customWidgetBuilder: (element) {
+                if (element.localName != 'img' || !element.classes.contains('showFold')) return null;
+                final id = element.attributes['alt']?.trim();
+                final hidden = hiddenById[id];
+                if (hidden == null) return const Text('折叠内容暂不可用', style: TextStyle(color: Colors.grey));
+                return TopicHiddenContentView(
+                  key: ValueKey('${topic.topicId}:$id'), content: hidden,
+                );
+              },
               factoryBuilder: () => MyWidgetFactory(context),
               onTapUrl: _openTopicLink,
               customStylesBuilder: HtmlProcess.buildCustomStyles,

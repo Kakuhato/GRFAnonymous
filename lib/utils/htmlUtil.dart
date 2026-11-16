@@ -56,7 +56,7 @@ class MyWidgetFactory extends WidgetFactory {
     final urls = <String>[];
     var initialIndex = -1;
     for (final element in elements) {
-      if (element.classes.contains('emoji')) continue;
+      if (element.classes.contains('emoji') || element.classes.contains('showFold')) continue;
       final source = element == clicked
           ? clickedUrl
           : element.attributes['src'];

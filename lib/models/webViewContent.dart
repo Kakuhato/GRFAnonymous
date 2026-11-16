@@ -35,6 +35,8 @@ class WebViewContent {
   int? _endlessFloor;
   int? _endlessRank;
   bool? _hasAi;
+  List<TopicHiddenContent>? _hideInfo;
+  List<TopicHiddenContent> get hideInfo => _hideInfo ?? const [];
   String get avatarFrame => _avatarFrame ?? '';
   String get userTitle => _userTitle ?? '';
   bool get vip => _vip ?? false;
@@ -77,12 +79,14 @@ class WebViewContent {
     int endlessFloor = 0,
     int endlessRank = 0,
     bool hasAi = false,
+    List<TopicHiddenContent> hideInfo = const [],
   }) : _avatarFrame = avatarFrame,
        _userTitle = userTitle,
        _vip = vip,
        _endlessFloor = endlessFloor,
        _endlessRank = endlessRank,
-       _hasAi = hasAi;
+       _hasAi = hasAi,
+       _hideInfo = hideInfo;
   //下划线命名json
   factory WebViewContent.fromJson(Map<String, dynamic> json) {
     return WebViewContent(
@@ -121,6 +125,11 @@ class WebViewContent {
       endlessFloor: int.tryParse('${json['endless_floor']}') ?? 0,
       endlessRank: int.tryParse('${json['endless_rank']}') ?? 0,
       hasAi: json['has_ai'] == true || json['has_ai'] == 1,
+      hideInfo: (json['hide_info'] is List ? json['hide_info'] as List : const [])
+          .whereType<Map>()
+          .map(TopicHiddenContent.fromJson)
+          .where((item) => item.hd.isNotEmpty)
+          .toList(),
     );
   }
 
@@ -160,8 +169,30 @@ class WebViewContent {
       'endless_floor': endlessFloor,
       'endless_rank': endlessRank,
       'has_ai': hasAi,
+      'hide_info': hideInfo.map((item) => item.toJson()).toList(),
     };
   }
+}
+
+class TopicHiddenContent {
+  const TopicHiddenContent({required this.hd, required this.title, required this.description});
+
+  // 用字符串匹配 HTML alt，兼容接口的数字与字符串两种 ID。
+  final String hd;
+  final String title;
+  final String description;
+
+  factory TopicHiddenContent.fromJson(Map json) => TopicHiddenContent(
+    hd: json['hd']?.toString().trim() ?? '',
+    title: json['title']?.toString() ?? '',
+    description: json['desc']?.toString() ?? '',
+  );
+
+  Map<String, dynamic> toJson() => {
+    'hd': int.tryParse(hd) ?? hd,
+    'title': title,
+    'desc': description,
+  };
 }
 
 class ThemeInfo {
