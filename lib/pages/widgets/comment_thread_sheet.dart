@@ -4,9 +4,11 @@ import 'package:oktoast/oktoast.dart';
 import '../../models/replyList.dart';
 import '../../pageRequest/webViewRequest.dart';
 import '../../utils/topic_link.dart';
+import '../../utils/theme_link.dart';
 import '../../utils/user_link.dart';
 import '../../utils/routeUtil.dart';
 import '../otherUserPage.dart';
+import '../theme_detail_page.dart';
 import 'comment_cards.dart';
 import 'comment_composer_sheet.dart';
 import 'comment_editing_controller.dart';
@@ -72,7 +74,7 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
   SingleComment? _parent;
   bool _loading = false;
   bool _composerOpen = false;
-  bool _openingUser = false;
+  bool _openingLink = false;
 
   @override
   void initState() {
@@ -180,14 +182,25 @@ class _CommentThreadSheetState extends State<_CommentThreadSheet> {
   }
 
   Future<bool> _openLink(String url) async {
+    final themeId = ThemeLink.parseHref(url);
+    if (themeId != null) {
+      if (!mounted || _openingLink || ModalRoute.of(context)?.isCurrent != true) return true;
+      _openingLink = true;
+      try {
+        await RouteUtils.push(context, ThemeDetailPage(themeId: themeId, name: '话题详情'));
+      } finally {
+        _openingLink = false;
+      }
+      return true;
+    }
     final uid = UserLink.parseHref(url);
     if (uid != null) {
-      if (!mounted || _openingUser || ModalRoute.of(context)?.isCurrent != true) return true;
-      _openingUser = true;
+      if (!mounted || _openingLink || ModalRoute.of(context)?.isCurrent != true) return true;
+      _openingLink = true;
       try {
         await RouteUtils.push(context, OtherUserPage(uid: uid));
       } finally {
-        _openingUser = false;
+        _openingLink = false;
       }
       return true;
     }

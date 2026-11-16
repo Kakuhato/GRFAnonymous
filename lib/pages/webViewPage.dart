@@ -22,6 +22,7 @@ import '../ui/uiSizeUtil.dart';
 import '../utils/globalKey.dart';
 import '../utils/routeUtil.dart';
 import '../utils/topic_link.dart';
+import '../utils/theme_link.dart';
 import '../utils/user_link.dart';
 import '../models/webViewContent.dart';
 import 'otherUserPage.dart';
@@ -143,6 +144,18 @@ class _WebViewPageState extends State<WebViewPage> {
 
   Future<bool> _openTopicLink(String url, {BuildContext? sourceContext}) async {
     final context = sourceContext ?? this.context;
+    final themeId = ThemeLink.parseHref(url);
+    if (themeId != null) {
+      if (!mounted || !context.mounted || _isOpeningTopicLink ||
+          ModalRoute.of(context)?.isCurrent != true) return true;
+      _isOpeningTopicLink = true;
+      try {
+        await RouteUtils.push(context, ThemeDetailPage(themeId: themeId, name: '话题详情'));
+      } finally {
+        _isOpeningTopicLink = false;
+      }
+      return true;
+    }
     final uid = UserLink.parseHref(url);
     if (uid != null) {
       if (!mounted || !context.mounted || _isOpeningTopicLink ||
